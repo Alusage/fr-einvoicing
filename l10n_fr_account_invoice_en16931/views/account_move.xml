@@ -10,13 +10,16 @@
         <field name="inherit_id" ref="account_invoice_en16931.view_move_form" />
         <field name="arch" type="xml">
             <field name="invoice_type_code" position="after">
-                <field name="fr_einvoicing_internal" readonly="state != 'draft'" />
+                <field
+                    name="fr_einvoicing_internal"
+                    attrs="{'readonly': [('state', '!=', 'draft')]}"
+                />
             </field>
             <div role="alert" position="after">
                 <div
                     class="alert alert-info"
                     role="alert"
-                    invisible="not fr_einvoicing_internal"
+                    attrs="{'invisible': [('fr_einvoicing_internal', '=', False)]}"
                 >
                     This is an <strong
                 >internal</strong> refund/invoice. It will not be sent to the customer by the accredited platform.
