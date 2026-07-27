@@ -109,13 +109,10 @@ class AccountMove(models.Model):
         string="E-invoicing Required",
     )
 
-    _sql_constraints = [
-        (
-            "fr_einvoicing_flow_unique",
-            "unique(fr_einvoicing_flow_id)",
-            "Each invoice must be linked to a different flow.",
-        )
-    ]
+    _fr_einvoicing_flow_unique = models.Constraint(
+        "unique(fr_einvoicing_flow_id)",
+        "Each invoice must be linked to a different flow.",
+    )
 
     @api.depends("fr_einvoicing_event_ids")
     def _compute_last_event(self):

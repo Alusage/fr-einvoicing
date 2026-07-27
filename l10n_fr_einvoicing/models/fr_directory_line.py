@@ -79,13 +79,10 @@ class FrDirectoryLine(models.Model):
         readonly=True, string="Accredited Platform"
     )
 
-    _sql_constraints = [
-        (
-            "partner_identifier_uniq",
-            "unique(partner_id, identifier)",
-            "This identifier already exists for this partner!",
-        )
-    ]
+    _partner_identifier_uniq = models.Constraint(
+        "unique(partner_id, identifier)",
+        "This identifier already exists for this partner!",
+    )
 
     @api.model
     def _peppol_status_selection(self):
