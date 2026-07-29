@@ -50,6 +50,22 @@ Neither was available on 16.0. Both now live in Alusage forks, consumed by the 1
    exist on the **18.0 branch only**. Backported on
    `Alusage/l10n-france@16.0-backport-l10n_fr_siret-einvoicing-helpers`.
 
+## A third backport is required to import vendor bills
+
+`l10n_fr_einvoicing_import` reads `parsed_inv[…]["einvoice_address"]` to bind an incoming bill to
+a company directory line and route it to the matching purchase journal. That key is produced by the
+parser, `account_invoice_import_facturx`, whose 16.0 release does **not** read
+`URIUniversalCommunication/URIID[@schemeID='0225']` — the 18.0 one does. Without it the whole
+routing silently does nothing: the bill lands in the default purchase journal and both directory
+fields stay empty.
+
+The 12-line backport currently lives on a **local** branch of the instance clone,
+`16.0-backport-einvoice-address`; unlike the two backports above there is no `Alusage/edi` fork yet,
+the instance consumes `OCA/edi` directly.
+
+Note also that no parser is a dependency of `l10n_fr_einvoicing_import` (same on 18.0): without
+`account_invoice_import_facturx` installed, every import fails on "unsupported XML invoice type".
+
 ## Full analysis
 
 The method-by-method matrix, the tax verdict, effort estimate, risks and the ordered migration plan
@@ -58,4 +74,5 @@ live in the spec (Obsidian vault):
 `projets/alusage/fr-einvoicing-erp16/specs/2026-07-16-backport-account_invoice_en16931-16.0.md`
 
 Odoo tasks: <https://nicolas.alusage.fr/odoo/project/153/4468> (backport),
+<https://nicolas.alusage.fr/odoo/project/153/4488> (import + routing acceptance),
 <https://nicolas.alusage.fr/odoo/project/153/4525> (reform stack activation).
