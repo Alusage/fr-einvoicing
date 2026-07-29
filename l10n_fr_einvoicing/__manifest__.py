@@ -38,5 +38,5 @@
         "views/fr_einvoicing_log.xml",
         "views/onboarding_templates.xml",
     ],
-    "installable": False,
+    "installable": True,
 }

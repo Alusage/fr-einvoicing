@@ -16,5 +16,5 @@
         "l10n_fr_siret_account",
     ],
     "data": ["views/account_move.xml"],
-    "installable": False,
+    "installable": True,
 }
