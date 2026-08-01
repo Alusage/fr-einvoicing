@@ -39,11 +39,11 @@ class ResPartner(models.Model):
             vals["country_subdivision"] = self.state_id.name
         if hasattr(self, "street3") and self.street3:
             vals["addr_l3"] = self.street3
-        if self.phone or self.mobile or self.email:
+        if self.phone or self.email:
             vals["contacts"] = [
                 {
                     "name": self.parent_id and self.name or None,
-                    "phone": self.phone or self.mobile,
+                    "phone": self.phone,
                     "email": self.email,
                 }
             ]

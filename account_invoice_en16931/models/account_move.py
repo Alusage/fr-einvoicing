@@ -389,7 +389,7 @@ class AccountMove(models.Model):
         self.ensure_one()
         company_vals = self.company_id.partner_id._en16931_partner_data(speedy)
         if self.user_id:
-            phone = self.user_id.partner_id.mobile or self.user_id.partner_id.phone
+            phone = self.user_id.partner_id.phone
             contact_vals = {
                 "name": self.user_id.name,
                 "phone": phone,
