@@ -6,6 +6,7 @@
 import csv
 import io
 import logging
+import threading
 
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
@@ -31,6 +32,11 @@ BOOL_TRUE = {"1", "true", "vrai", "oui", "yes", "x", "o"}
 # account.move, whose recompute would otherwise pile up over the entire
 # invoice history and exhaust memory on a production-sized database.
 DIRECTORY_IMPORT_BATCH = 200
+
+# Moves recomputed per transaction by _directory_set_company_entity_type. That
+# write dirties every move of the company at once, so the recompute is sliced
+# explicitly rather than left to a single flush.
+DIRECTORY_MOVE_RECOMPUTE_BATCH = 2000
 
 # The State directory caps each deposited file at 5000 lines and 1 MB.
 DIRECTORY_MAX_LINES = 5000
@@ -226,7 +232,7 @@ class FrDirectoryLine(models.Model):
             # Flush, commit, then drop the cache: without this the recomputes
             # of the whole run pile up until the final flush.
             self.env.flush_all()
-            self.env.cr.commit()
+            self._directory_commit()
             self.env.invalidate_all()
             logger.info(
                 "Directory CSV import: %s/%s partners processed.",
@@ -258,8 +264,20 @@ class FrDirectoryLine(models.Model):
         # same values are written together, and tracking is disabled so the
         # import doesn't fill the chatter.
         Partner = partners.sudo().with_context(tracking_disable=True)
+        # A company's own partner is left out. account.move carries
+        # `fr_directory_company_entity_type`, a related on
+        # `company_id.partner_id.fr_directory_entity_type`, and the stored
+        # `fr_einvoicing_required` depends on it — so writing that one partner
+        # marks every move of the company dirty, not just its own invoices. The
+        # end-of-batch flush then recomputes the entire table at once and dies
+        # with MemoryError. Batching by partner cannot prevent this: a single
+        # such partner in any batch is enough, and the company is always in the
+        # directory return since it is registered there itself. Setting the
+        # company entity type is one-off configuration, not bulk import work —
+        # see _directory_set_company_entity_type.
+        targets = Partner.commercial_partner_id - self._directory_company_partners()
         groups = {}
-        for partner in Partner.commercial_partner_id:
+        for partner in targets:
             vals = {"fr_directory_last_sync_date": today}
             if not partner.fr_directory_entity_type:
                 vals["fr_directory_entity_type"] = "private"
@@ -282,6 +300,70 @@ class FrDirectoryLine(models.Model):
             ).append(partner.id)
         for vals_items, partner_ids in groups.items():
             Partner.browse(partner_ids).write(dict(vals_items))
+
+    @api.model
+    def _directory_company_partners(self):
+        """Partners backing a res.company, kept out of bulk directory marking.
+
+        Their entity type feeds a field read by every move of the company, so
+        they are set one at a time and never from inside an import loop.
+        """
+        companies = self.env["res.company"].sudo().with_context(active_test=False)
+        return companies.search([]).partner_id.commercial_partner_id
+
+    @api.model
+    def _directory_set_company_entity_type(self, company, entity_type="private"):
+        """Set the directory entity type on a company's own partner.
+
+        This has to happen eventually — `fr_einvoicing_required` stays False on
+        every invoice until the company has an entity type — just not during a
+        bulk import. The value is written in SQL and the dependent recompute is
+        replayed in bounded slices: going through the ORM would mark the whole
+        invoice history dirty at once and the next flush would exhaust memory.
+
+        Returns the number of moves recomputed.
+        """
+        partner = company.sudo().partner_id.commercial_partner_id
+        if not partner:
+            raise UserError(_("Company %s has no partner.", company.display_name))
+        if partner.fr_directory_entity_type == entity_type:
+            return 0
+        self.env.cr.execute(
+            "UPDATE res_partner SET fr_directory_entity_type = %s WHERE id = %s",
+            (entity_type, partner.id),
+        )
+        # The ORM never saw that UPDATE, so no recompute is queued yet: the
+        # dependent moves are marked below, one slice at a time.
+        self.env.invalidate_all()
+        Move = self.env["account.move"].sudo()
+        move_ids = Move.search([("company_id", "=", company.id)]).ids
+        for offset in range(0, len(move_ids), DIRECTORY_MOVE_RECOMPUTE_BATCH):
+            batch_ids = move_ids[offset:offset + DIRECTORY_MOVE_RECOMPUTE_BATCH]
+            Move.browse(batch_ids).modified(["fr_directory_company_entity_type"])
+            self.env.flush_all()
+            self._directory_commit()
+            self.env.invalidate_all()
+            logger.info(
+                "Company entity type: %s/%s moves recomputed.",
+                min(offset + DIRECTORY_MOVE_RECOMPUTE_BATCH, len(move_ids)),
+                len(move_ids),
+            )
+        return len(move_ids)
+
+    @api.model
+    def _directory_commit(self):
+        """Commit the current batch, except inside a test transaction.
+
+        Tests run in a savepoint that a real COMMIT would destroy, taking the
+        rest of the suite down with it. The thread flag is the guard the Odoo
+        core uses for its own auto-commit loops; in_test_mode() alone does not
+        catch every runner.
+        """
+        if getattr(threading.current_thread(), "testing", False):
+            return
+        if self.env.registry.in_test_mode():
+            return
+        self.env.cr.commit()
 
     @api.model
     def _directory_partner_index(self):
