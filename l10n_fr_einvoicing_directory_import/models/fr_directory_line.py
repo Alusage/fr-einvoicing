@@ -6,6 +6,7 @@
 import csv
 import io
 import logging
+import threading
 
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
@@ -95,6 +96,21 @@ class FrDirectoryLine(models.Model):
     # Import: directory return CSV -> create/update directory lines
     # ------------------------------------------------------------------
     @api.model
+    def _directory_commit(self):
+        """Commit the current batch, unless a test is driving the import.
+
+        The batching above needs a real commit to keep the recompute queue
+        bounded on a loaded database. But `TransactionCase` rolls the whole
+        test back through a savepoint: an unguarded `cr.commit()` writes the
+        fixtures for good and leaves the following tests on a database that no
+        longer matches their expectations. `odoo.tests` sets `testing` on the
+        current thread, so honouring it keeps both behaviours correct.
+        """
+        if getattr(threading.current_thread(), "testing", False):
+            self.env.flush_all()
+            return
+        self.env.cr.commit()
+
     def _directory_import_csv(self, content):
         """Create/update directory lines from the directory return CSV.
 
@@ -226,7 +242,7 @@ class FrDirectoryLine(models.Model):
             # Flush, commit, then drop the cache: without this the recomputes
             # of the whole run pile up until the final flush.
             self.env.flush_all()
-            self.env.cr.commit()
+            self._directory_commit()
             self.env.invalidate_all()
             logger.info(
                 "Directory CSV import: %s/%s partners processed.",
