@@ -16,5 +16,5 @@
         "security/ir.model.access.csv",
         "wizards/fr_directory_csv_wizard_views.xml",
     ],
-    "installable": False,
+    "installable": True,
 }
