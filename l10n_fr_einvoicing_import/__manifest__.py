@@ -13,7 +13,7 @@
 
 {
     "name": "France eInvoicing: Import Vendor Bills",
-    "version": "16.0.1.0.0",
+    "version": "15.0.1.0.0",
     "category": "Accounting",
     "license": "AGPL-3",
     "summary": "Import vendor bills/refunds from accredited platform",

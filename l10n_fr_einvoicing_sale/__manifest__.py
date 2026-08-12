@@ -4,7 +4,7 @@
 
 {
     "name": "France eInvoicing Sale",
-    "version": "16.0.1.0.0",
+    "version": "15.0.1.0.0",
     "category": "Sales",
     "license": "AGPL-3",
     "summary": "eInvoicing for France in Sales",

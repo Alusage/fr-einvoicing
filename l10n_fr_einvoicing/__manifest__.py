@@ -4,7 +4,7 @@
 
 {
     "name": "France eInvoicing",
-    "version": "16.0.1.2.0",
+    "version": "15.0.1.2.0",
     "category": "Accounting",
     "license": "AGPL-3",
     "summary": "Community implementation of the e-invoicing reform for France",
