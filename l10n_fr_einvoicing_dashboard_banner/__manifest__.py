@@ -16,5 +16,7 @@
         "l10n_fr_einvoicing",
     ],
     "post_init_hook": "create_fr_einvoicing_dashboard_cells",
-    "installable": True,
+    # account_dashboard_banner only exists from 16.0 on (OCA
+    # account-financial-tools), so this glue cannot install on 15.0 as is.
+    "installable": False,
 }

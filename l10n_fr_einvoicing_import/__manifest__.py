@@ -25,5 +25,7 @@
         "account_invoice_import",
     ],
     "data": ["views/account_journal.xml", "views/fr_directory_line.xml"],
-    "installable": True,
+    # account_invoice_import was never migrated to 15.0: OCA/edi carries it on
+    # 14.0 and 16.0, with nothing in between. Back to True once it is there.
+    "installable": False,
 }
