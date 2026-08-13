@@ -50,7 +50,6 @@ class ResCompany(models.Model):
         compute="_compute_fr_ctc_credentials",
         store=True,
         readonly=False,
-        precompute=True,
     )
     fr_ctc_client_secret = fields.Char(
         groups="base.group_system",
@@ -58,7 +57,6 @@ class ResCompany(models.Model):
         compute="_compute_fr_ctc_credentials",
         store=True,
         readonly=False,
-        precompute=True,
     )
     fr_ctc_last_flow_import_datetime = fields.Datetime(
         string="Last Flow Import from Accredited Platform"

@@ -19,7 +19,6 @@ class PurchaseOrder(models.Model):
         "fr.directory.line",
         compute="_compute_company_fr_directory_line_id",
         store=True,
-        precompute=True,
         readonly=False,
         ondelete="restrict",
         string="Company Directory Line",

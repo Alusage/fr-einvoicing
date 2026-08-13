@@ -39,7 +39,6 @@ class SaleOrder(models.Model):
         "fr.directory.line",
         compute="_compute_fr_directory_line_id",
         store=True,
-        precompute=True,
         readonly=False,
         tracking=True,
         string="Directory Line",
