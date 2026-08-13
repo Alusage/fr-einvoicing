@@ -13,10 +13,10 @@
     "website": "https://github.com/akretion/fr-einvoicing",
     "depends": [
         "l10n_fr_einvoicing",
-        # 16.0 backport: account_payment_batch_oca (18.0-only, bank-payment-
-        # alternative) does not exist on 16.0. The overridden method
+        # 15.0 backport: account_payment_batch_oca (18.0-only, bank-payment-
+        # alternative) does not exist on 15.0. The overridden method
         # generated2uploaded() lives on account.payment.order (OCA bank-payment),
-        # available on 16.0, so depend on that directly.
+        # available on 15.0, so depend on that directly.
         "account_payment_order",
     ],
     "data": [

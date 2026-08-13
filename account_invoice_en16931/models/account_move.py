@@ -1050,16 +1050,17 @@ class AccountMove(models.Model):
         comes from wkhtmltopdf and is not PDF/A: no sRGB OutputIntent, glyph
         width arrays inconsistent with the embedded fonts, PDF header not 1.7.
         veraPDF fails ~1000 checks on those (ISO 19005-3 clauses 6.2.4.3 and
-        6.2.11.5). Odoo 16.0 ships OdooPdfFileWriter.convert_to_pdfa(), used by
-        account_edi_ubl_cii for exactly this; run the already-Factur-X PDF
-        through it. cloneReaderDocumentRoot keeps the embedded XML and the
-        Factur-X XMP; convert_to_pdfa() adds the OutputIntent, rebuilds the glyph
-        widths and fixes the header/ID.
+        6.2.11.5). Odoo ships OdooPdfFileWriter.convert_to_pdfa() from 15.0 on
+        (16.0 uses it in account_edi_ubl_cii for exactly this); run the
+        already-Factur-X PDF through it. cloneReaderDocumentRoot keeps the
+        embedded XML and the Factur-X XMP; convert_to_pdfa() adds the
+        OutputIntent, rebuilds the glyph widths and fixes the header/ID.
 
-        16.0-specific: convert_to_pdfa() only exists on 16.0 in this shape.
+        The 15.0 and 16.0 implementations are identical, so this method is
+        unchanged from the 16.0 branch.
         """
-        # Imported here: OdooPdfFileWriter is 16.0-only, keep the module import
-        # list portable across versions.
+        # Imported here: OdooPdfFileWriter disappeared in later versions, keep
+        # the module import list portable across versions.
         from odoo.tools.pdf import OdooPdfFileReader, OdooPdfFileWriter
 
         pdf_bytesio.seek(0)
@@ -1078,11 +1079,11 @@ class AccountMove(models.Model):
     def _get_pdf_invoice_report(self):
         """Report action rendering the human-readable invoice.
 
-        Passed as a recordset rather than as the "account.report_invoice_with_payments"
-        string: that string is the report_name of the standard action, and a
-        customer module repointing the action to its own QWeb template makes it
-        unresolvable — _get_report() then falls back to env.ref(), which returns
-        the ir.ui.view of the same name and raises.
+        Resolved through its XML ID rather than through the
+        "account.report_invoice_with_payments" report_name: a customer module
+        repointing the action to its own QWeb template makes that string
+        unresolvable, and env.ref() on it returns the ir.ui.view of the same
+        name instead.
         """
         self.ensure_one()
         return self.env.ref("account.account_invoices")
@@ -1090,10 +1091,11 @@ class AccountMove(models.Model):
     def _get_pdf_invoice_bin(self):
         """This works with both qweb and py3o"""
         self.ensure_one()
+        # 15.0: _render() takes no report_ref, it runs on the report record.
         pdf_invoice_bin, _filetype = (
-            self.env["ir.actions.report"]
+            self._get_pdf_invoice_report()
             .with_context(regular_pdf_invoice=True)
-            ._render(self._get_pdf_invoice_report(), [self.id])
+            ._render([self.id])
         )
         return pdf_invoice_bin
 

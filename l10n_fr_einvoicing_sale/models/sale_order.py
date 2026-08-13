@@ -17,8 +17,8 @@ logger = logging.getLogger(__name__)
 class SaleOrder(models.Model):
     _inherit = "sale.order"
 
-    # 16.0 backport: commercial_partner_invoice_id was added to
-    # sale_commercial_partner on 18.0 and is absent from its 16.0 version.
+    # 15.0 backport: commercial_partner_invoice_id was added to
+    # sale_commercial_partner on 18.0 and is absent from its 15.0 version.
     # The field is a plain related, so define it here to keep the domain of
     # fr_directory_line_id working, rather than backporting sale_commercial_partner.
     commercial_partner_invoice_id = fields.Many2one(

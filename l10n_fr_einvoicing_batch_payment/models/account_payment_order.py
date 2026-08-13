@@ -17,8 +17,8 @@ class AccountPaymentOrder(models.Model):
             and self.company_id.fr_ctc_event_auto_send_payment_sent
         ):
             for payment in self.payment_ids:
-                # 16.0: account.payment.invoice_ids is an 18.0 core field;
-                # reconciled_invoice_ids is the 16.0 equivalent (the invoices
+                # 15.0: account.payment.invoice_ids is an 18.0 core field;
+                # reconciled_invoice_ids is the 15.0 equivalent (the invoices
                 # actually settled by this payment).
                 for inv in payment.reconciled_invoice_ids:
                     if (

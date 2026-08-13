@@ -12,9 +12,9 @@
     "maintainers": ["alexis-via"],
     "website": "https://github.com/akretion/fr-einvoicing",
     "depends": [
-        # 16.0 backport: l10n_fr_siret_account is an 18.0-only glue module that
+        # 15.0 backport: l10n_fr_siret_account is an 18.0-only glue module that
         # reconciles the l10n_fr / l10n_fr_account core split (which did not
-        # happen in 16.0). On 16.0, l10n_fr_siret carries everything it needs.
+        # happen in 15.0). On 15.0, l10n_fr_siret carries everything it needs.
         "l10n_fr_siret",
         "l10n_fr_account_invoice_en16931",
     ],

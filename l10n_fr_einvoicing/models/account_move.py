@@ -568,7 +568,7 @@ class AccountMove(models.Model):
                     )
                     % {"invoice": self.display_name, "company": company.display_name}
                 )
-            # 16.0: move.preferred_payment_method_line_id is 18.0-only. The 16.0
+            # 15.0: move.preferred_payment_method_line_id is 18.0-only. The 15.0
             # equivalent is the OCA payment_mode_id (account_payment_partner),
             # read defensively so the Chorus check is skipped rather than crashing
             # when that optional OCA module is not installed.
@@ -691,7 +691,7 @@ class AccountMove(models.Model):
         return super().button_cancel()
 
     def button_draft(self):
-        # 16.0: there is no _check_draftable() hook (18.0-only, extracted from
+        # 15.0: there is no _check_draftable() hook (18.0-only, extracted from
         # button_draft). Inject the check directly in button_draft() instead.
         for move in self:
             if (

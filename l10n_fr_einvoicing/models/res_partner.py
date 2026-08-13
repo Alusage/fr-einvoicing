@@ -70,7 +70,7 @@ class ResPartner(models.Model):
         tracking=200,
         string="Entity Closed",
     )  # administrativeStatus = C
-    # 16.0 backport: attrs domains cannot traverse a relational dot-path
+    # 15.0 backport: attrs domains cannot traverse a relational dot-path
     # (parent_id.fr_directory_closed) like the 18.0 inline invisible= did, so
     # expose it as a related field usable in an attrs domain.
     fr_directory_parent_closed = fields.Boolean(
@@ -129,7 +129,7 @@ class ResPartner(models.Model):
 
     @api.depends("fr_directory_line_ids")
     def _compute_fr_directory_line_active_count(self):
-        # 16.0: read_group(domain, fields, groupby) returns dicts and exposes the
+        # 15.0: read_group(domain, fields, groupby) returns dicts and exposes the
         # count as <groupby>_count, unlike the 18.0 _read_group(groupby=,
         # aggregates=) which returns (recordset, value) tuples.
         rg_res = self.env["fr.directory.line"].read_group(

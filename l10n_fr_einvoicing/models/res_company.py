@@ -558,8 +558,8 @@ class ResCompany(models.Model):
             ("company_id", "=", self.id),
             ("company_fr_directory_line_id", "=", False),
         ]
-        # 16.0: hard_lock_date is part of the 18.0 multi-lock-date rework and
-        # does not exist. fiscalyear_lock_date is the closest 16.0 equivalent
+        # 15.0: hard_lock_date is part of the 18.0 multi-lock-date rework and
+        # does not exist. fiscalyear_lock_date is the closest 15.0 equivalent
         # (the accountant-level lock below which entries can no longer change).
         if self.fiscalyear_lock_date:
             domain.append(("date", ">", self.fiscalyear_lock_date))

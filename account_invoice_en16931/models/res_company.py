@@ -39,7 +39,7 @@ class ResCompany(models.Model):
     # TODO add field to choose between Factur-X and UBL
 
     def _compute_no_vat_taxes(self):
-        # On 16.0, read_group() returns dicts and the count is exposed as
+        # On 15.0, read_group() returns dicts and the count is exposed as
         # <groupby>_count: the 18.0 signature (groupby=, aggregates=) and its
         # recordset results do not exist yet.
         rg_res = self.env["account.tax"].read_group(

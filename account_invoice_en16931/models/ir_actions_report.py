@@ -2,6 +2,8 @@
 # @author: Alexis de Lattre <alexis.delattre@akretion.com>
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
+from io import BytesIO
+
 from odoo import api, models
 
 
@@ -27,34 +29,47 @@ class IrActionsReport(models.Model):
             reports |= self.env.ref(xmlid, raise_if_not_found=False) or self.browse()
         return reports
 
-    @api.model
-    def _is_en16931_invoice_report(self, report_ref):
-        return self._is_invoice_report(report_ref) or self._get_report(
-            report_ref
-        ) in self._get_en16931_invoice_reports()
+    def _is_en16931_invoice_report(self):
+        """15.0: the report is self, so there is nothing to resolve.
 
-    def _render_qweb_pdf_prepare_streams(self, report_ref, data, res_ids=None):
-        # It works, but:
-        # - when you click on the "Print" button or use the "Print" menu,
-        # the XML file is regenerated even when the invoice is read from the attachment.
-        # - when you open the invoice from the attachment, you get the "original" XML
-        # file
-        collected_streams = super()._render_qweb_pdf_prepare_streams(
-            report_ref, data, res_ids=res_ids
-        )
-        amo = self.env["account.move"]
+        The report hooks take a report_ref and account exposes
+        _is_invoice_report() only from 16.0 on. Here _post_pdf() runs on the
+        report record itself, which account compares the same way
+        (`if self in invoice_reports` in its own _render_qweb_pdf()).
+        """
+        self.ensure_one()
+        return self in self._get_en16931_invoice_reports()
+
+    def _post_pdf(self, save_in_attachment, pdf_content=None, res_ids=None):
+        """15.0 counterpart of the 16.0 _render_qweb_pdf_prepare_streams().
+
+        16.0 renders one stream per record and lets modules rework each of
+        them; 15.0 renders the whole batch as a single pdf_content and offers
+        this hook instead, which is where account_invoice_facturx embeds its
+        own Factur-X XML. Same caveats as upstream: printing regenerates the
+        XML even when the invoice is read back from its attachment, and
+        opening the invoice from the attachment gives the "original" XML.
+
+        Called with res_ids=None when the PDF comes from the attachment, hence
+        the guard.
+        """
         if (
-            collected_streams
+            pdf_content
             and res_ids
             and len(res_ids) == 1
-            and self._is_en16931_invoice_report(report_ref)
+            and len(self) == 1
+            and self._is_en16931_invoice_report()
             and not self.env.context.get("regular_pdf_invoice")
         ):
-            move = amo.browse(res_ids)
+            move = self.env["account.move"].browse(res_ids)
             invoice_format = move._get_pdf_invoice_format()
             if invoice_format:
-                pdf_bytesio = collected_streams[move.id]["stream"]
-                move._regular_pdf_invoice_to_en16931_pdf_invoice(
-                    pdf_bytesio, invoice_format
-                )
-        return collected_streams
+                with BytesIO(pdf_content) as pdf_bytesio:
+                    move._regular_pdf_invoice_to_en16931_pdf_invoice(
+                        pdf_bytesio, invoice_format
+                    )
+                    pdf_bytesio.seek(0)
+                    pdf_content = pdf_bytesio.read()
+        return super()._post_pdf(
+            save_in_attachment, pdf_content=pdf_content, res_ids=res_ids
+        )
