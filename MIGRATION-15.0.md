@@ -144,3 +144,54 @@ static reading had missed.
 The four `External ID not found` errors (`product.product_product_1`, `base.res_partner_1/2/4`) come
 from `base_business_document_import` and `account_invoice_import` tests reaching for demo records on a
 database created without demo data. To be re-run on a demo database.
+
+## End-to-end run: a real invoice, validated by Saxon
+
+Installing and passing the unit tests proves nothing about the output — and a schematron check is
+**silently skipped** when no Saxon server answers, after which the library still logs
+`successfully validated`. So the port was exercised on a real invoice, with the local `saxon-server`
+container (`ghcr.io/alusage/saxon-server:v1.15-alusage.2`) and the codedb served by Odoo itself:
+
+```
+en16931.saxon_server_url             = http://saxon-server:5000/transform
+en16931.saxon_server_codedb_base_url = http://<odoo-container-alias>:8069/en16931/
+```
+
+Setup: French chart of accounts, seller and buyer with valid SIREN/NIC/VAT triplets, both registered
+as `private` directory entities, `VATEX-FR-FRANCHISE` set on the two exempt taxes (categoy E — the
+auto-mapping only covers K and G, by design). Invoice: two lines, one with a 5 % discount, at 20 %
+VAT — **HT 182.25, VAT 36.45, TTC 218.70**.
+
+Result:
+
+| Output | Size | Time | Schematrons |
+|---|---|---|---|
+| CII (`factur-x`, extended-ctc-fr) | 8 280 B | 0.34 s | `base` + `fr-ctc` |
+| UBL 2.1 (extended-ctc-fr) | 5 783 B | 0.35 s | `base` + `fr-ctc` |
+| Factur-X PDF | 35 303 B | 3.29 s | `base` + `fr-ctc` |
+
+The three traces that prove a run really validated: `docker logs saxon-server` shows two lines per
+check, the Odoo log shows the codedb being fetched
+(`Replaced codedb XML file by custom URL …FACTUR-X_EXTENDED_codedb.xml`), and
+`grep -ci 'Skipping schematron'` returns **0**.
+
+The PDF carries `factur-x.xml` (8 272 B, extracted back with `get_facturx_xml_from_pdf`), a `%PDF-1.7`
+header and an OutputIntent — so `_post_pdf()`, the Factur-X injection and `convert_to_pdfa()` all
+work on 15.0. Full PDF/A-3 conformance was not re-checked with veraPDF here.
+
+### The bug only this run could find
+
+`account.move.line.display_type` gained `'product'` in 16.0, where it is required; on 15.0 the
+selection is `False` / `line_section` / `line_note`, so a product line is falsy. Every line filter in
+the stack tested `display_type == "product"`, so **BG-25 came out empty and BT-106/BT-109 at zero**:
+a well-formed invoice with a VAT breakdown and no invoice line. Install was happy, the 49 unit tests
+were happy, and the schematron caught it immediately (`BR-FXEXT-S-08`: `SumBT131 : 0, NBlines : 0`
+against `basisAmount : 182.25`, plus `BR-FREXT-CO-15`).
+
+### Environment: pin PyPDF2
+
+Odoo 15 pins `PyPDF2==1.26.0` and `odoo.tools.pdf` uses `PdfFileWriter`/`PdfFileReader`, **removed in
+PyPDF2 3.0**. The generated client requirements list `PyPDF2` unpinned, so pip installs 3.0.1 and
+every PDF operation raises `DeprecationError: PdfFileWriter is deprecated and was removed`. Pin
+`PyPDF2==1.26.0`. `factur-x` uses the separate `pypdf` package (6.x) and is unaffected — both live
+side by side.
