@@ -9,9 +9,13 @@
         <field name="model">account.journal</field>
         <field name="inherit_id" ref="account.account_journal_dashboard_kanban_view" />
         <field name="arch" type="xml">
-            <!-- xpath is really dirty, because there are multiple occurences of account_file_uploader but the menu section for sale/purchase journal lacks distinctive id= and name= -->
+            <!-- 15.0: the account_file_uploader widget only exists from 16.0 on;
+                 here the same spot is the "Upload Invoices" link of the New
+                 column. Anchoring on the <a> rather than on the class alone
+                 keeps it unambiguous — the class is also on the <button> in the
+                 card body, which is what makes the upstream xpath dirty. -->
             <xpath
-                expr="//widget[@name='account_file_uploader']/../.."
+                expr="//a[hasclass('o_button_upload_bill')]/../.."
                 position="inside"
             >
                 <div
