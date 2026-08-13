@@ -15,8 +15,14 @@ block other modules or data) -->
         <field name="model">res.partner</field>
         <field name="inherit_id" ref="base.view_partner_form" />
         <field name="arch" type="xml">
+            <!-- 15.0: the <div name="partner_address_country"> wrapper around
+                 country_id only appeared in 16.0. Here country_id sits directly
+                 in the o_address_format div, which occurs twice in the form
+                 (company block, then contact block) — the one carried over from
+                 16.0 is the contact block, identified by the vat field that
+                 immediately follows it. -->
             <xpath
-                expr="//div[@name='partner_address_country']/field[@name='country_id']"
+                expr="//div[hasclass('o_address_format')][following-sibling::field[@name='vat']]/field[@name='country_id']"
                 position="attributes"
             >
                 <attribute name="required">1</attribute>
