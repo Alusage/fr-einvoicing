@@ -195,3 +195,31 @@ PyPDF2 3.0**. The generated client requirements list `PyPDF2` unpinned, so pip i
 every PDF operation raises `DeprecationError: PdfFileWriter is deprecated and was removed`. Pin
 `PyPDF2==1.26.0`. `factur-x` uses the separate `pypdf` package (6.x) and is unaffected — both live
 side by side.
+
+## Run on a database with demo data
+
+The 15.0 entrypoint of the jarvis container creates its database **without** demo data (note that
+`--without-demo=False` does not help: any non-empty value is truthy, so it also means *no demo*;
+just omit the option). On a database created with demo:
+
+* the whole stack installs, and **the four demo invoices of the French company are posted** — unlike
+  16.0, where they stayed in draft. The difference is install order: `l10n_fr_account_tax_unece`
+  being part of the same `-i` list, the taxes carry their UNECE codes before the demo is posted;
+* the suite passes end to end: **`0 failed, 0 error(s) of 79 tests`**, covering the nine modules of
+  this stack plus `account_invoice_import`, `base_business_document_import` and `pdf_helper`.
+
+### Three more 16.0-isms, only demo data could reveal them
+
+All of them in `account_invoice_import`, none in this repository:
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| lines dropped on import | the wizard **writes** `display_type: "product"` | drop the key; a product line is falsy on 15.0 |
+| `Invalid field 'partner_id' on model 'product.supplierinfo'` | renamed from `name` in 16.0 | back to `name` |
+| `Cannot create unbalanced journal entry` | 16.0 recomputes dynamic lines on `create()` | `check_move_validity=False` + `_recompute_dynamic_lines()` + `_check_balanced()`, as the 14.0 module did |
+| `'account.move' object has no attribute '_check_total_amount'` | core method added in 16.0, working on `tax_totals` (`tax_totals_json` on 15.0) | carried in the module, forcing the difference onto the first tax line |
+
+## PDF/A-3 conformance
+
+veraPDF (`verapdf/cli`, flavour 3b) on the generated Factur-X PDF: **`PASS`**. So
+`convert_to_pdfa()` produces a conformant PDF/A-3b on 15.0, as it does on 16.0.
