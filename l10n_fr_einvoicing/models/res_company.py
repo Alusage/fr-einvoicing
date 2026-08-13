@@ -201,7 +201,7 @@ class ResCompany(models.Model):
         company_id = self.id
         with self.pool.cursor() as new_cr:
             # Flush the pending operations to avoid a deadlock (inspired by iap module)
-            # self.env.flush_all()
+            # self.env["res.company"].flush()
             token_obj = self.with_env(self.env(cr=new_cr)).env["fr.einvoicing.token"]
             token_rec = token_obj.sudo().search(
                 [("company_id", "=", company_id)], limit=1
@@ -244,7 +244,7 @@ class ResCompany(models.Model):
         }
         with self.pool.cursor() as new_cr:
             # Flush the pending operations to avoid a deadlock (inspired by iap module)
-            # self.env.flush_all()
+            # self.env["res.company"].flush()
             token_obj = self.with_env(self.env(cr=new_cr)).env["fr.einvoicing.token"]
             token_rec = token_obj.sudo().search(
                 [("company_id", "=", company_id)], limit=1

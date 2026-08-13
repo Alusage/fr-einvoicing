@@ -297,7 +297,7 @@ class TestDirectoryCsv(DirectoryCase):
             "SIREN;Adresse de facturation;Adresse de facturation active\n"
             f"{SIREN_A};{SIREN_A};1\n"
         )
-        self.partner_a.invalidate_recordset()
+        self.partner_a.invalidate_cache(ids=self.partner_a.ids)
         self.assertEqual(self.partner_a.fr_directory_entity_type, "private")
         self.assertTrue(self.partner_a.fr_directory_last_sync_date)
         self.assertEqual(self.partner_a.fr_directory_siren, SIREN_A)
@@ -307,7 +307,7 @@ class TestDirectoryCsv(DirectoryCase):
             "SIREN;Adresse de facturation;Adresse de facturation active\n"
             f"{SIREN_A};{SIREN_A};1\n"
         )
-        self.partner_a.invalidate_recordset()
+        self.partner_a.invalidate_cache(ids=self.partner_a.ids)
         self.assertEqual(
             self.partner_a.default_fr_directory_line_id.identifier, SIREN_A
         )

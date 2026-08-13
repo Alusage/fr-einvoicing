@@ -26,7 +26,7 @@ class TestFrIntrastatService(TransactionCase):
             "UPDATE res_partner SET vat='FR 86 792377731' WHERE id=%s",
             (self.partner.id,),
         )
-        self.partner.invalidate_recordset(["vat"])
+        self.partner.invalidate_cache(["vat"], self.partner.ids)
         res = self.partner._fr_directory_check_siren_siret_vat()
         self.assertFalse(res)
         self.assertEqual(self.partner.vat, "FR86792377731")
@@ -39,7 +39,7 @@ class TestFrIntrastatService(TransactionCase):
             "UPDATE res_partner SET vat='FR 87 792377999' WHERE id=%s",
             (self.partner.id,),
         )
-        self.partner.invalidate_recordset(["vat"])
+        self.partner.invalidate_cache(["vat"], self.partner.ids)
         res = self.partner._fr_directory_check_siren_siret_vat()
         self.assertTrue(res)
         self.assertFalse(self.partner.vat)
@@ -52,7 +52,7 @@ class TestFrIntrastatService(TransactionCase):
             "UPDATE res_partner SET vat='FR 87 792377731' WHERE id=%s",
             (self.partner.id,),
         )
-        self.partner.invalidate_recordset(["vat"])
+        self.partner.invalidate_cache(["vat"], self.partner.ids)
         res = self.partner._fr_directory_check_siren_siret_vat()
         self.assertTrue(res)
         self.assertFalse(self.partner.vat)
@@ -65,7 +65,7 @@ class TestFrIntrastatService(TransactionCase):
             "UPDATE res_partner SET siret='79237773100023' WHERE id=%s",
             (self.partner.id,),
         )
-        self.partner.invalidate_recordset(["siret"])
+        self.partner.invalidate_cache(["siret"], self.partner.ids)
         res = self.partner._fr_directory_check_siren_siret_vat()
         self.assertTrue(res)
         self.assertEqual(self.partner.siret, "79237773100023")
@@ -77,7 +77,7 @@ class TestFrIntrastatService(TransactionCase):
             "UPDATE res_partner SET siret='79237773100029' WHERE id=%s",
             (self.partner.id,),
         )
-        self.partner.invalidate_recordset(["siret"])
+        self.partner.invalidate_cache(["siret"], self.partner.ids)
         res = self.partner._fr_directory_check_siren_siret_vat()
         self.assertTrue(res)
         self.assertEqual(self.partner.siret, "792377731*****")
@@ -89,7 +89,7 @@ class TestFrIntrastatService(TransactionCase):
             "UPDATE res_partner SET siret='79237773900029' WHERE id=%s",
             (self.partner.id,),
         )
-        self.partner.invalidate_recordset(["siret"])
+        self.partner.invalidate_cache(["siret"], self.partner.ids)
         res = self.partner._fr_directory_check_siren_siret_vat()
         self.assertTrue(res)
         self.assertFalse(self.partner.siret)
@@ -102,7 +102,7 @@ class TestFrIntrastatService(TransactionCase):
             "nic='00017' WHERE id=%s",
             (self.partner.id,),
         )
-        self.partner.invalidate_recordset(["siret", "siren", "nic"])
+        self.partner.invalidate_cache(["siret", "siren", "nic"], self.partner.ids)
         res = self.partner._fr_directory_check_siren_siret_vat()
         self.assertTrue(res)
         self.assertEqual(self.partner.siret, "66263163900017")
@@ -115,7 +115,7 @@ class TestFrIntrastatService(TransactionCase):
             "nic='00023', vat='fr 13 648670396' WHERE id=%s",
             (self.partner.id,),
         )
-        self.partner.invalidate_recordset(["siret", "siren", "nic", "vat"])
+        self.partner.invalidate_cache(["siret", "siren", "nic", "vat"], self.partner.ids)
         res = self.partner._fr_directory_check_siren_siret_vat()
         self.assertTrue(res)
         self.assertFalse(self.partner.siret)
@@ -129,7 +129,7 @@ class TestFrIntrastatService(TransactionCase):
             "nic='000 2' WHERE id=%s",
             (self.partner.id,),
         )
-        self.partner.invalidate_recordset(["siret", "siren", "nic"])
+        self.partner.invalidate_cache(["siret", "siren", "nic"], self.partner.ids)
         res = self.partner._fr_directory_check_siren_siret_vat()
         self.assertTrue(res)
         self.assertEqual(self.partner.siret, "792377731*****")
@@ -142,7 +142,7 @@ class TestFrIntrastatService(TransactionCase):
             "nic=' ' WHERE id=%s",
             (self.partner.id,),
         )
-        self.partner.invalidate_recordset(["siret", "siren", "nic"])
+        self.partner.invalidate_cache(["siret", "siren", "nic"], self.partner.ids)
         res = self.partner._fr_directory_check_siren_siret_vat()
         self.assertTrue(res)
         self.assertEqual(self.partner.siret, "79237773100023")
@@ -155,7 +155,7 @@ class TestFrIntrastatService(TransactionCase):
             "nic='00023' WHERE id=%s",
             (self.partner.id,),
         )
-        self.partner.invalidate_recordset(["siret", "siren", "nic"])
+        self.partner.invalidate_cache(["siret", "siren", "nic"], self.partner.ids)
         res = self.partner._fr_directory_check_siren_siret_vat()
         self.assertTrue(res)
         self.assertEqual(self.partner.siret, "79237773100023")
@@ -168,7 +168,7 @@ class TestFrIntrastatService(TransactionCase):
             "nic=' ', vat='  ' WHERE id=%s",
             (self.partner.id,),
         )
-        self.partner.invalidate_recordset(["siret", "siren", "nic", "vat"])
+        self.partner.invalidate_cache(["siret", "siren", "nic", "vat"], self.partner.ids)
         res = self.partner._fr_directory_check_siren_siret_vat()
         self.assertFalse(res)
         self.assertFalse(self.partner.siret)
@@ -182,7 +182,7 @@ class TestFrIntrastatService(TransactionCase):
             "nic='00023', vat='FR 86 792377731' WHERE id=%s",
             (self.partner.id,),
         )
-        self.partner.invalidate_recordset(["siret", "siren", "nic", "vat"])
+        self.partner.invalidate_cache(["siret", "siren", "nic", "vat"], self.partner.ids)
         res = self.partner._fr_directory_check_siren_siret_vat()
         self.assertFalse(res)
         self.assertEqual(self.partner.siret, "79237773100023")
@@ -196,7 +196,7 @@ class TestFrIntrastatService(TransactionCase):
             "vat='FR42000000001' WHERE id=%s",
             (self.partner.id,),
         )
-        self.partner.invalidate_recordset(["siret", "siren", "nic", "vat"])
+        self.partner.invalidate_cache(["siret", "siren", "nic", "vat"], self.partner.ids)
         res = self.partner._fr_directory_check_siren_siret_vat()
         self.assertFalse(res)
         self.assertEqual(self.partner.siren, "000000001")
@@ -208,7 +208,7 @@ class TestFrIntrastatService(TransactionCase):
             "vat='FR63763983269' WHERE id=%s",
             (self.partner.id,),
         )
-        self.partner.invalidate_recordset(["siret", "siren", "nic", "vat"])
+        self.partner.invalidate_cache(["siret", "siren", "nic", "vat"], self.partner.ids)
         action = self.env["res.config.settings"].fr_ctc_check_siren_siret_vat_button()
         self.assertEqual(action["type"], "ir.actions.client")
         self.assertEqual(action["params"]["type"], "warning")

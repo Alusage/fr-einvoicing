@@ -227,9 +227,12 @@ class FrDirectoryLine(models.Model):
 
             # Flush, commit, then drop the cache: without this the recomputes
             # of the whole run pile up until the final flush.
-            self.env.flush_all()
+            # 15.0: env.flush_all()/env.invalidate_all() are 16.0 API; the same
+            # whole-environment flush is BaseModel.flush() on any model, and the
+            # cache is dropped through env.cache.
+            self.env["res.partner"].flush()
             self.env.cr.commit()
-            self.env.invalidate_all()
+            self.env.cache.invalidate()
             logger.info(
                 "Directory CSV import: %s/%s partners processed.",
                 min(offset + DIRECTORY_IMPORT_BATCH, len(all_partner_ids)),
