@@ -148,7 +148,7 @@ class AccountMove(models.Model):
         line_types = []
         has_deduct_down_payment = False
         for line in self.invoice_line_ids:
-            if line.display_type == "product":
+            if not line.display_type:
                 # If an invoice line has no product, we consider it is a service
                 ptype = line.product_id and line.product_id.type or "service"
                 is_accessory_cost = (

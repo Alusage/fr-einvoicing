@@ -68,7 +68,7 @@ class AccountInvoiceEn16931Generate(models.TransientModel):
                     and move.state != "cancel"
                     and move.partner_id
                     and move.invoice_line_ids.filtered(
-                        lambda x: x.display_type == "product"
+                        lambda x: not x.display_type
                     )
                 ):
                     move_ids.append(move.id)

@@ -124,7 +124,7 @@ class AccountMove(models.Model):
                 if has_is_downpayment:
                     for line in move.invoice_line_ids:
                         if (
-                            line.display_type == "product"
+                            not line.display_type
                             and line.is_downpayment
                             and float_compare(
                                 line.quantity, 0, precision_digits=qty_prec
@@ -237,7 +237,7 @@ class AccountMove(models.Model):
                 errors = []
                 if not move.company_id.no_vat_taxes:
                     for line in move.invoice_line_ids.filtered(
-                        lambda x: x.display_type == "product"
+                        lambda x: not x.display_type
                     ):
                         line._post_check_en16931_sale_document(errors)
                 if move.currency_id.compare_amounts(move.amount_untaxed, 0) < 0:
@@ -331,7 +331,7 @@ class AccountMove(models.Model):
             # before the per-line check that states the problem in readable
             # terms ("should have exactly one VAT tax and not 2").
             vat_tax_first_line = self.invoice_line_ids.filtered(
-                lambda x: x.display_type == "product"
+                lambda x: not x.display_type
             )[:1].tax_ids.filtered(lambda x: x.unece_type_code == "VAT")[:1]
             if (
                 vat_tax_first_line
@@ -503,7 +503,7 @@ class AccountMove(models.Model):
         # price_subtotal is already a positive amount in the invoice currency,
         # on invoices and refunds alike, so no sign to apply here.
         for line in self.invoice_line_ids.filtered(
-            lambda x: x.display_type == "product"
+            lambda x: not x.display_type
         ):
             for tax in line.tax_ids:
                 if tax.id in seen_tax_ids or tax.unece_type_code != "VAT":
@@ -675,7 +675,7 @@ class AccountMove(models.Model):
         }
         lnumber = 0
         for line in self.invoice_line_ids:
-            if line.display_type == "product":
+            if not line.display_type:
                 price_compare = float_compare(
                     line.price_unit, 0, precision_digits=speedy["price_prec"]
                 )
@@ -991,7 +991,7 @@ class AccountMove(models.Model):
             and self.is_sale_document()
             and self.partner_id
             and self.state != "cancel"
-            and self.invoice_line_ids.filtered(lambda x: x.display_type == "product")
+            and self.invoice_line_ids.filtered(lambda x: not x.display_type)
         ):
             return invoice_format
         else:

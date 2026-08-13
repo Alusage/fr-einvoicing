@@ -30,7 +30,7 @@ class AccountMoveLine(models.Model):
 
     def _post_check_en16931_sale_document(self, errors):
         self.ensure_one()
-        assert self.display_type == "product"
+        assert not self.display_type
         for tax in self.tax_ids:
             # either we check both active and inactive taxes in
             # company_id._en16931_checks() or we block invoice validation
