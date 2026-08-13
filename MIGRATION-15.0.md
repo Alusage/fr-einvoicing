@@ -18,7 +18,7 @@ starting point. Read [`MIGRATION-16.0.md`](MIGRATION-16.0.md) first: this file o
 | `l10n_fr_einvoicing_batch_payment` | Unchanged from 16.0 (`account_payment_order` exists on 15.0). |
 | `l10n_fr_einvoicing_directory_import` | Unchanged from 16.0. |
 | `account_invoice_en16931_py3o` | Unchanged from 16.0 (`report_py3o` 15.0 keeps the same `py3o.report._postprocess_report`). |
-| `l10n_fr_einvoicing_import` | `installable: False` — `account_invoice_import` is missing on 15.0, see below. |
+| `l10n_fr_einvoicing_import` | Unchanged from 16.0, on the ported `account_invoice_import` (see below). |
 | `l10n_fr_einvoicing_dashboard_banner` | `installable: False` — `account_dashboard_banner` is 16.0-only. |
 
 ## What carries over untouched
@@ -103,3 +103,44 @@ dependency set installs on 3.9.
 There is no `15.0` branch on `akretion/fr-einvoicing`; one was requested in
 [issue #52](https://github.com/akretion/fr-einvoicing/issues/52), as was done for 16.0 (#28) and
 19.0 (#35).
+
+## Install and test run on 15.0
+
+Run on a jarvis 15.0 worktree (`fr-einvoicing-erp15-15`, branch `dev`), Python 3.9, database
+created **without** demo data:
+
+```
+odoo-dev -d odoo-dev -i account_invoice_en16931,account_invoice_en16931_py3o,\
+l10n_fr_account_invoice_en16931,l10n_fr_einvoicing,l10n_fr_einvoicing_batch_payment,\
+l10n_fr_einvoicing_directory_import,l10n_fr_einvoicing_purchase,l10n_fr_einvoicing_sale,\
+l10n_fr_einvoicing_import,account_invoice_import,l10n_fr_account_tax_unece \
+  --stop-after-init --http-port=8899
+```
+
+All of them install (69 modules loaded, none in error), and the suite passes:
+**`0 failed, 0 error(s) of 49 tests`** — the same 49 tests as on 16.0.
+
+⚠️ `--http-port` on a free port is mandatory: the container entrypoint runs a resident Odoo on
+8069, and sharing the port makes core `HttpCase` tests hit the resident server. On an empty
+database the resident may also initialise it concurrently, which breaks the registry
+(`duplicate key … pg_type_typname_nsp_index`) — that happened once here.
+
+### What the run actually caught
+
+Nothing in the tax layer, and nothing in the report layer: every failure was a 16.0 API that
+static reading had missed.
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `<xpath expr="//div[@name='partner_address_country']…">` cannot be located | that wrapper div appeared in 16.0 | anchor on the `o_address_format` div followed by `vat` |
+| `<xpath expr="//widget[@name='account_file_uploader']…">` cannot be located | the widget appeared in 16.0 | anchor on `<a class="o_button_upload_bill">`, which also disambiguates |
+| `unknown parameter 'precompute'` × 6 | field parameter added in 16.0 | dropped |
+| `'res.partner' object has no attribute 'invalidate_recordset'` × 15 | 16.0 ORM API | `invalidate_cache(fnames, ids)` |
+| `'Environment' object has no attribute 'flush_all'` × 9 | 16.0 ORM API, **in production code** (the CSV import batch loop) | `BaseModel.flush()` + `env.cache.invalidate()` |
+| `module 'odoo.fields' has no attribute 'Json'` | `fields.Json` is 16.0 | Text field holding the JSON string |
+| `Unknown field "account.account.account_type"` | the account type refactor is 16.0 | `user_type_id` / `internal_group` |
+| `No module named 'PyPDF2.utils'` | OCA `pdf_helper` 15.0 vs PyPDF2 ≥ 2.0 — **not a backport artefact** | try `PyPDF2.errors` first |
+
+The four `External ID not found` errors (`product.product_product_1`, `base.res_partner_1/2/4`) come
+from `base_business_document_import` and `account_invoice_import` tests reaching for demo records on a
+database created without demo data. To be re-run on a demo database.
