@@ -716,7 +716,16 @@ class AccountMove(models.Model):
                             move.display_name,
                         )
                         move._fr_ctc_raise_error(err_msg, dir_sync_done)
-        return super()._check_draftable()
+        # 16.0: there is no _check_draftable() hook (extracted from
+        # button_draft() in 17.0+), so there is no parent implementation to
+        # chain to. This method is invoked from the button_draft() override
+        # below instead.
+
+    def button_draft(self):
+        # 16.0 has no _check_draftable() hook: run the eInvoicing
+        # reset-to-draft guard explicitly before the standard reset.
+        self._check_draftable()
+        return super().button_draft()
 
     def _fr_ctc_prepare_flow(self):
         self.ensure_one()
