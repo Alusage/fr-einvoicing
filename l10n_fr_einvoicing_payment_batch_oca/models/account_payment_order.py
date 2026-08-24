@@ -4,7 +4,7 @@
 
 from markupsafe import Markup
 
-from odoo import Command, models
+from odoo import Command, _, models
 
 
 class AccountPaymentOrder(models.Model):
@@ -41,7 +41,7 @@ class AccountPaymentOrder(models.Model):
                         event = self.env["fr.einvoicing.event"].sudo().create(vals)
                         inv.message_post(
                             body=Markup(
-                                self.env._(
+                                _(
                                     "Event <a href=# data-oe-model=fr.einvoicing.event "
                                     "data-oe-id=%s>Payment Sent</a> "
                                     "created automatically by Odoo",
