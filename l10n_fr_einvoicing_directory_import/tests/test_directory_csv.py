@@ -409,6 +409,35 @@ class TestDirectoryCsv(DirectoryCase):
             2,
         )
 
+    # ------------------------------------------------------------------
+    # Default directory line
+    # ------------------------------------------------------------------
+    def test_default_directory_line_without_line(self):
+        self.assertFalse(self.partner_a._default_fr_directory_line())
+
+    def test_default_directory_line_with_single_line(self):
+        self._import(
+            "SIREN;Adresse de facturation;Adresse de facturation active\n"
+            f"{SIREN_A};{SIREN_A};1\n"
+        )
+        self.partner_a.invalidate_recordset()
+        self.assertEqual(
+            self.partner_a._default_fr_directory_line(),
+            self.partner_a.fr_directory_line_ids,
+        )
+
+    def test_default_directory_line_with_several_lines(self):
+        """Several lines: the base rule refuses to guess and leaves the choice
+        to the user -- or to an override."""
+        self._import(
+            "SIREN;Adresse de facturation;Adresse de facturation active\n"
+            f"{SIREN_A};{SIREN_A};1\n"
+            f"{SIREN_A};{SIREN_A}_{SIRET_A};1\n"
+        )
+        self.partner_a.invalidate_recordset()
+        self.assertEqual(len(self.partner_a.fr_directory_line_ids), 2)
+        self.assertFalse(self.partner_a._default_fr_directory_line())
+
 
 class TestDirectoryCsvWizard(DirectoryCase):
     @classmethod
