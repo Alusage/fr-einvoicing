@@ -101,9 +101,10 @@ class FrDirectoryLine(models.Model):
         Understands the Chorus Pro directory export (columns "SIREN" and
         "Adresse de facturation" / "Adresse de facturation active") as well as
         a canonical format (siren, siret, identifier, routing_code, state...).
-        Each row is matched to its commercial partner by SIREN and upserted by
-        (partner, identifier), like the native API sync. The delimiter (``,``
-        or ``;``) is auto-detected.
+        Each row is matched by SIREN to every commercial partner carrying it —
+        duplicate records included — and upserted by (partner, identifier),
+        like the native API sync. The delimiter (``,`` or ``;``) is
+        auto-detected.
         """
         try:
             text = content.decode("utf-8-sig")
@@ -141,10 +142,10 @@ class FrDirectoryLine(models.Model):
                 skipped += 1
                 continue
             vals = self._directory_row_to_vals(row, cols, siren)
-            partner, issue = self._directory_match_partner(
+            partners, issue = self._directory_match_partners(
                 siren, vals.get("siret"), index
             )
-            if not partner:
+            if not partners:
                 skipped += 1
                 errors.append(
                     _(
@@ -157,16 +158,13 @@ class FrDirectoryLine(models.Model):
             if issue == "ambiguous":
                 ambiguous += 1
                 errors.append(
-                    _(
-                        "Row %(n)s: SIREN %(s)s is shared by several companies — "
-                        "linked to %(p)s.",
-                        n=line_no,
-                        s=siren,
-                        p=partner.display_name,
-                    )
+                    _("Row %(n)s: SIREN %(s)s is shared by %(c)s companies — "
+                      "the line is replicated on each of them.",
+                      n=line_no, s=siren, c=len(partners))
                 )
-            synced.add(partner.id)
-            parsed.append((partner, vals))
+            for partner in partners:
+                synced.add(partner.id)
+                parsed.append((partner, vals))
 
         # Pre-load every existing line of the partners involved in one query,
         # indexed by (partner, identifier) — the key used for the upsert.
@@ -319,23 +317,30 @@ class FrDirectoryLine(models.Model):
         return {"siren": by_siren, "siret": by_siret}
 
     @api.model
-    def _directory_match_partner(self, siren, siret, index):
-        """Return (commercial_partner, anomaly).
+    def _directory_match_partners(self, siren, siret, index):
+        """Return (commercial_partners, anomaly).
 
-        Prefer the SIRET (disambiguates when several companies share a SIREN);
-        otherwise match by SIREN. ``anomaly`` is 'ambiguous' when the SIREN maps
-        to several distinct companies.
+        The directory returns one row per SIREN, but a database routinely holds
+        several records for the same company. All of them are targets: each one
+        gets its own copy of the line, so each record can carry its own default
+        routing line (BT-49) instead of only the first one found. The SIRET is
+        an additional entry point, for the rows whose SIREN column and
+        identifier disagree.
+
+        ``anomaly`` is 'no_partner' when nothing matched, and 'ambiguous' when
+        the SIREN is shared — informational only, since the line is replicated
+        rather than dropped.
         """
         empty = self.env["res.partner"]
-        if siret and siret in index["siret"]:
-            return index["siret"][siret].commercial_partner_id, None
         partners = index["siren"].get(siren, empty)
+        if siret and siret in index["siret"]:
+            partners |= index["siret"][siret]
         commercials = partners.commercial_partner_id
         if not commercials:
             return empty, "no_partner"
         if len(commercials) == 1:
             return commercials, None
-        return commercials[0], "ambiguous"
+        return commercials, "ambiguous"
 
     @api.model
     def _directory_detect_columns(self, fieldnames):

@@ -206,9 +206,10 @@ class TestDirectoryCsv(DirectoryCase):
     # ------------------------------------------------------------------
     # Partner matching
     # ------------------------------------------------------------------
-    def test_match_partner_prefers_siret(self):
-        """A SIRET disambiguates companies sharing a SIREN."""
-        twin = self.Partner.create(
+    def _create_twin(self):
+        """A second company sharing SIREN_A: the duplicate-record situation the
+        fan-out addresses."""
+        return self.Partner.create(
             {
                 "name": "Directory Test A bis",
                 "is_company": True,
@@ -216,31 +217,45 @@ class TestDirectoryCsv(DirectoryCase):
                 "country_id": self.env.ref("base.fr").id,
             }
         )
+
+    def test_match_partners_fans_out_on_shared_siren(self):
+        twin = self._create_twin()
         index = self.Line._directory_partner_index()
-        partner, issue = self.Line._directory_match_partner(
+        partners, issue = self.Line._directory_match_partners(SIREN_A, None, index)
+        self.assertEqual(partners, self.partner_a | twin)
+        self.assertEqual(issue, "ambiguous")
+
+    def test_match_partners_siret_row_covers_every_twin(self):
+        """Fan-out is unconditional: a row carrying a SIRET still lands on every
+        company sharing the SIREN, not only on the SIRET holder."""
+        twin = self._create_twin()
+        index = self.Line._directory_partner_index()
+        partners, issue = self.Line._directory_match_partners(
             SIREN_A, "10000000900017", index
         )
-        self.assertEqual(partner, twin)
+        self.assertEqual(partners, self.partner_a | twin)
+        self.assertEqual(issue, "ambiguous")
+
+    def test_match_partners_single_company_has_no_anomaly(self):
+        index = self.Line._directory_partner_index()
+        partners, issue = self.Line._directory_match_partners(SIREN_B, None, index)
+        self.assertEqual(partners, self.partner_b)
         self.assertFalse(issue)
 
-    def test_match_partner_reports_ambiguous_siren(self):
-        self.Partner.create(
-            {
-                "name": "Directory Test A bis",
-                "is_company": True,
-                "company_registry": SIREN_A + "00017",
-                "country_id": self.env.ref("base.fr").id,
-            }
+    def test_match_partners_falls_back_to_siret_when_siren_unknown(self):
+        """The SIREN column and the SIRET of the identifier can disagree in a
+        directory return; the SIRET still finds the company."""
+        index = self.Line._directory_partner_index()
+        partners, issue = self.Line._directory_match_partners(
+            SIREN_C, SIRET_B, index
         )
-        index = self.Line._directory_partner_index()
-        partner, issue = self.Line._directory_match_partner(SIREN_A, None, index)
-        self.assertEqual(issue, "ambiguous")
-        self.assertTrue(partner)
+        self.assertEqual(partners, self.partner_b)
+        self.assertFalse(issue)
 
-    def test_match_partner_unknown_siren(self):
+    def test_match_partners_unknown_siren(self):
         index = self.Line._directory_partner_index()
-        partner, issue = self.Line._directory_match_partner(SIREN_C, None, index)
-        self.assertFalse(partner)
+        partners, issue = self.Line._directory_match_partners(SIREN_C, None, index)
+        self.assertFalse(partners)
         self.assertEqual(issue, "no_partner")
 
     # ------------------------------------------------------------------
@@ -349,19 +364,50 @@ class TestDirectoryCsv(DirectoryCase):
             self._import("")
 
     def test_import_reports_ambiguous_siren(self):
-        self.Partner.create(
-            {
-                "name": "Directory Test A bis",
-                "is_company": True,
-                "company_registry": SIREN_A + "00017",
-                "country_id": self.env.ref("base.fr").id,
-            }
+        """A shared SIREN is reported, but as a replication notice: nothing is
+        dropped any more."""
+        self._create_twin()
+        res = self._import(
+            "SIREN;Adresse de facturation\n" f"{SIREN_A};{SIREN_A}\n"
         )
         res = self._import(f"SIREN;Adresse de facturation\n{SIREN_A};{SIREN_A}\n")
         self.assertEqual(res["ambiguous"], 1)
         # Assert on the SIREN, not on the wording: the message goes through _()
         # and the test database may run in any language.
         self.assertTrue(any(SIREN_A in err for err in res["errors"]))
+
+    def test_import_fans_out_shared_siren(self):
+        """Each company sharing the SIREN gets its own directory line, so each
+        one can carry its own default routing line."""
+        twin = self._create_twin()
+        res = self._import(
+            "SIREN;Adresse de facturation;Adresse de facturation active\n"
+            f"{SIREN_A};{SIREN_A};1\n"
+        )
+        self.assertEqual(res["created"], 2)
+        for partner in (self.partner_a, twin):
+            line = self.Line.with_context(active_test=False).search(
+                [("partner_id", "=", partner.id)]
+            )
+            self.assertEqual(line.identifier, SIREN_A)
+            self.assertIn(partner.id, res["partner_ids"])
+
+    def test_import_fan_out_is_idempotent(self):
+        twin = self._create_twin()
+        csv_text = (
+            "SIREN;Adresse de facturation;Adresse de facturation active\n"
+            f"{SIREN_A};{SIREN_A}_{SIRET_A};1\n"
+        )
+        self._import(csv_text)
+        res = self._import(csv_text)
+        self.assertEqual(res["created"], 0)
+        self.assertEqual(res["updated"], 0)
+        self.assertEqual(
+            self.Line.with_context(active_test=False).search_count(
+                [("partner_id", "in", (self.partner_a | twin).ids)]
+            ),
+            2,
+        )
 
 
 class TestDirectoryCsvWizard(DirectoryCase):
