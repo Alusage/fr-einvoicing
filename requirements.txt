@@ -1,4 +1,4 @@
 # generated from manifests external_dependencies
 factur-x>=6.8
-pyfrctc>=0.21
+pyfrctc>=0.22
 unidecode
