@@ -2,12 +2,13 @@
 # @author: Nicolas Jeudy <nicolas@alusage.fr>
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import models
+from odoo import api, models
 
 
 class AccountMoveSend(models.AbstractModel):
     _inherit = "account.move.send"
 
+    @api.model
     def _is_applicable_to_company(self, method, company):
         """Take the native sending method off the table for these companies.
 
