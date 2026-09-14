@@ -2,6 +2,7 @@
 # @author: Nicolas Jeudy <nicolas@alusage.fr>
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+import base64
 import logging
 
 from odoo import fields, models
@@ -20,6 +21,12 @@ FLOW_NUMBER_EREPORTING = 10
 
 # Syntax of an e-reporting flow, as Akretion's e-reporting module sets it.
 EREPORTING_SYNTAX = "FRR"
+
+# What the platform calls an incoming document, and what Akretion calls the
+# matching flow. A lifecycle answer reaches us under the same channel as an
+# invoice, which is why the sorting cannot be skipped.
+CDAR_DOCUMENT_TYPE = "CrossDomainAcknowledgementAndResponse"
+INVOICE_DOCUMENT_TYPES = ("Invoice", "CreditNote", "Factur-X")
 
 
 class FrEinvoicingFlow(models.Model):
@@ -168,3 +175,56 @@ class FrEinvoicingFlow(models.Model):
         if ppf_messages:
             return ppf_messages[0].get("uuid")
         return False
+
+    def _download(self, session, result):
+        """Fetch the incoming document from the Odoo platform.
+
+        The platform hands the document encrypted; decrypting it yields the
+        raw bytes upstream's own download produces, so the rest of the chain
+        -- `_process`, the CDAR parsing, the OCA import -- is untouched.
+        """
+        self.ensure_one()
+        if not self.company_id._fr_ctc_is_pa_odoo():
+            return super()._download(session, result)
+        log_obj = self.env["fr.einvoicing.log"]
+        if self.direction != "in":
+            logger.info("Flow %s is not incoming, skipped", self.display_name)
+            return
+        if self.state != "created":
+            logger.info(
+                "Flow %s is in state %s, not created, skipped",
+                self.display_name,
+                self.state,
+            )
+            return
+        if not self.identifier:
+            log_obj._warning_log(
+                result, f"Flow {self.display_name} has no identifier to download."
+            )
+            return
+        edi_user = session
+        try:
+            answer = edi_user._call_peppol_proxy(
+                edi_user._get_peppol_proxy_endpoint("1/get_document"),
+                {"message_uuids": [self.identifier]},
+            )
+            content = answer[self.identifier]
+            file_bin = edi_user._peppol_get_decoded_document(content)
+        except Exception as err:
+            log_obj._error_log(
+                result, f"Failed to download flow {self.display_name}: {err}"
+            )
+            return
+        self.sudo().write(
+            {
+                "file_bin": base64.encodebytes(file_bin),
+                "filename": (
+                    f"{self.identifier}.pdf"
+                    if self.syntax == "Factur-X"
+                    else f"{self.identifier}.xml"
+                ),
+                "state": "downloaded",
+            }
+        )
+        if "updated_count" in result:
+            result["updated_count"] += 1
