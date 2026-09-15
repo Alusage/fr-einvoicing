@@ -24,6 +24,16 @@ FLOW_TYPE_BY_DOCUMENT_TYPE = {
     CDAR_DOCUMENT_TYPE: "CustomerInvoiceLC",
 }
 
+# The syntax Akretion reads off a flow, which the platform states as a
+# document type instead. It matters beyond bookkeeping: the download names
+# the file after it, and the processing decodes a CDAR on it.
+SYNTAX_BY_DOCUMENT_TYPE = {
+    "Invoice": "UBL",
+    "CreditNote": "UBL",
+    "Factur-X": "Factur-X",
+    CDAR_DOCUMENT_TYPE: "CDAR",
+}
+
 
 class ResCompany(models.Model):
     _inherit = "res.company"
@@ -74,6 +84,7 @@ class ResCompany(models.Model):
             "direction": "in",
             "identifier": message.get("uuid"),
             "type": FLOW_TYPE_BY_DOCUMENT_TYPE.get(document_type),
+            "syntax": SYNTAX_BY_DOCUMENT_TYPE.get(document_type),
             "company_id": self.id,
         }
 
