@@ -32,6 +32,15 @@ EREPORTING_SYNTAX = "FRR"
 CDAR_DOCUMENT_TYPE = "CrossDomainAcknowledgementAndResponse"
 INVOICE_DOCUMENT_TYPES = ("Invoice", "CreditNote", "Factur-X")
 
+# What the platform answers about a sent message, and what it means for the
+# flow. Its other states -- ready, to_send, processing -- mean the message is
+# still on its way: the flow stays as it is and the next run asks again.
+FLOW_STATE_BY_MESSAGE_STATE = {"done": "done", "error": "error"}
+
+# The platform reports "request not ready" with this code. It is not a
+# failure: reading it as one would mark a flow in error while it travels.
+MESSAGE_NOT_READY_CODE = 702
+
 
 class FrEinvoicingFlow(models.Model):
     _inherit = "fr.einvoicing.flow"
@@ -251,5 +260,63 @@ class FrEinvoicingFlow(models.Model):
                 "state": "downloaded",
             }
         )
+        if "updated_count" in result:
+            result["updated_count"] += 1
+
+    def _update_status(self, session, result):
+        """Ask the Odoo platform what became of a sent flow.
+
+        Nothing is acknowledged here, unlike the native status cron: an
+        acknowledgement drops the message from the platform for good, and a
+        status reading is no reason to give up the right to read it again.
+        """
+        self.ensure_one()
+        if not self.company_id._fr_ctc_is_pa_odoo():
+            return super()._update_status(session, result)
+        log_obj = self.env["fr.einvoicing.log"]
+        if self.direction != "out" or self.state != "sent":
+            return
+        if not self.identifier:
+            log_obj._warning_log(
+                result, f"Flow {self.display_name} has no identifier to ask about."
+            )
+            return
+        edi_user = session
+        try:
+            answer = edi_user._call_peppol_proxy(
+                edi_user._get_peppol_proxy_endpoint("1/get_document"),
+                {"message_uuids": [self.identifier]},
+            )
+            content = answer[self.identifier]
+        except Exception as err:
+            log_obj._error_log(
+                result,
+                f"Failed to read the status of flow {self.display_name}: {err}",
+            )
+            self.sudo().write({"odoo_error_details": str(err)})
+            return
+        error = content.get("error")
+        if error:
+            if error.get("code") == MESSAGE_NOT_READY_CODE:
+                # Still travelling: ask again on the next run.
+                return
+            self.sudo().write(
+                {"state": "error", "ap_error_details": str(error)}
+            )
+            log_obj._error_log(
+                result, f"The platform reports an error on flow {self.display_name}."
+            )
+            return
+        state = FLOW_STATE_BY_MESSAGE_STATE.get(content.get("state"))
+        if not state:
+            return
+        self.sudo().write(
+            {
+                "state": state,
+                "updated_at": fields.Datetime.now(),
+                "odoo_error_details": False,
+            }
+        )
+        log_obj._info_log(result, f"Flow {self.display_name} is now {state}.")
         if "updated_count" in result:
             result["updated_count"] += 1
