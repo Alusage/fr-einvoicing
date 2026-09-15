@@ -5,9 +5,13 @@
 import base64
 import logging
 
-from odoo import fields, models
+from odoo import api, fields, models
 
 logger = logging.getLogger(__name__)
+
+# Value of `fr_ctc_accredited_platform` this module answers for. Spelled out
+# here rather than imported from the company, so each file reads on its own.
+PLATFORM = "odoo"
 
 # The Odoo platform addresses a French party as "<EAS>:<endpoint>", where the
 # endpoint reads SIREN[_SIRET][_suffix] -- the very grammar of a directory
@@ -31,6 +35,27 @@ INVOICE_DOCUMENT_TYPES = ("Invoice", "CreditNote", "Factur-X")
 
 class FrEinvoicingFlow(models.Model):
     _inherit = "fr.einvoicing.flow"
+
+    @api.model
+    def _cron_companies(self):
+        """Let a company reach the crons without an authentication method.
+
+        Upstream requires one, which is right for the AFNOR API: without
+        OAuth credentials there is nothing to open a session with. The Odoo
+        platform signs each request with the proxy user's key instead, so a
+        company on it never has one -- and would silently be skipped by both
+        crons, neither sending nor importing anything.
+        """
+        return super()._cron_companies() | (
+            self.env["res.company"]
+            .sudo()
+            .search(
+                [
+                    ("fr_ctc_accredited_platform", "=", PLATFORM),
+                    ("partner_id.fr_directory_entity_type", "=", "private"),
+                ]
+            )
+        )
 
     def _fr_ctc_odoo_receiver(self):
         """Return the "<EAS>:<endpoint>" the Odoo platform routes on.
