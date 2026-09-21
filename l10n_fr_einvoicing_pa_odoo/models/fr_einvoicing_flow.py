@@ -5,7 +5,7 @@
 import base64
 import logging
 
-from odoo import api, fields, models
+from odoo import api, fields, models, tools
 
 logger = logging.getLogger(__name__)
 
@@ -263,12 +263,47 @@ class FrEinvoicingFlow(models.Model):
         if "updated_count" in result:
             result["updated_count"] += 1
 
+    def _fr_ctc_odoo_ack(self, session, result):
+        """Tell the platform this message has been dealt with.
+
+        An acknowledgement drops the message from the platform for good, so it
+        may only happen once the flow has reached a state it will not leave:
+        a document that failed to import stays there and comes back on the
+        next run, which is the whole point of not acknowledging on download.
+        """
+        self.ensure_one()
+        log_obj = self.env["fr.einvoicing.log"]
+        if not self.identifier:
+            return
+        # Committing before the call is what keeps an acknowledgement honest.
+        # The platform forgets the message, so whatever we made of it has to
+        # be on disk already: a rollback later in the cron would otherwise
+        # lose the invoice with no way left to ask for it again. Skipped under
+        # tests, where a commit would break the enclosing case.
+        if not tools.config.get("test_enable"):
+            self.env.cr.commit()
+        edi_user = session
+        try:
+            edi_user._call_peppol_proxy(
+                edi_user._get_peppol_proxy_endpoint("1/ack"),
+                {"message_uuids": [self.identifier]},
+            )
+        except Exception as err:
+            # A failed acknowledgement is not a failed import: the message
+            # comes back on the next run, where the duplicate guard knows it.
+            log_obj._warning_log(
+                result, f"Failed to acknowledge flow {self.display_name}: {err}"
+            )
+            return
+        logger.info("Flow %s acknowledged to the Odoo platform", self.display_name)
+
     def _update_status(self, session, result):
         """Ask the Odoo platform what became of a sent flow.
 
-        Nothing is acknowledged here, unlike the native status cron: an
-        acknowledgement drops the message from the platform for good, and a
-        status reading is no reason to give up the right to read it again.
+        The flow is acknowledged once its state is final, as the native status
+        cron does: it is only asked about while it is 'sent', so giving up the
+        right to read it again costs nothing. The lifecycle answer arrives as
+        a separate incoming message, untouched by this.
         """
         self.ensure_one()
         if not self.company_id._fr_ctc_is_pa_odoo():
@@ -306,6 +341,7 @@ class FrEinvoicingFlow(models.Model):
             log_obj._error_log(
                 result, f"The platform reports an error on flow {self.display_name}."
             )
+            self._fr_ctc_odoo_ack(session, result)
             return
         state = FLOW_STATE_BY_MESSAGE_STATE.get(content.get("state"))
         if not state:
@@ -320,3 +356,4 @@ class FrEinvoicingFlow(models.Model):
         log_obj._info_log(result, f"Flow {self.display_name} is now {state}.")
         if "updated_count" in result:
             result["updated_count"] += 1
+        self._fr_ctc_odoo_ack(session, result)
