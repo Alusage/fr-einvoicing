@@ -89,12 +89,12 @@ class ResCompany(models.Model):
         }
 
     def _fr_ctc_run_import(self, session, result, download_and_process=True):
-        """List the incoming documents on the Odoo platform.
+        """List the incoming documents on the Odoo platform, then process them.
 
-        Nothing is acknowledged here. Acknowledging a message drops it from
-        the platform for good, so it may only happen once the invoice has
-        actually been imported -- otherwise a failing import would lose the
-        document with no way to ask for it again.
+        Nothing is acknowledged on listing or on download. Acknowledging a
+        message drops it from the platform for good, so it only happens once
+        the flow reports the document actually landed -- otherwise a failing
+        import would lose it with no way to ask for it again.
         """
         self.ensure_one()
         if not self._fr_ctc_is_pa_odoo():
@@ -161,4 +161,11 @@ class ResCompany(models.Model):
                 flow._download(session, result)
                 if flow.state == "downloaded":
                     flow._process(result)
+                # 'done' is what `_process` writes once the document actually
+                # landed somewhere -- a supplier invoice created, or a
+                # lifecycle event matched to its invoice. Anything else left
+                # the flow in 'error' or short of processing, and the message
+                # has to stay on the platform.
+                if flow.state == "done":
+                    flow._fr_ctc_odoo_ack(session, result)
         return flows
