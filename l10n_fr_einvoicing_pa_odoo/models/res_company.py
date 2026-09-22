@@ -160,12 +160,8 @@ class ResCompany(models.Model):
             for flow in flows:
                 flow._download(session, result)
                 if flow.state == "downloaded":
+                    # The acknowledgement is not sent from here: `_process`
+                    # carries it, so that a flow retried by a later cron run
+                    # is acknowledged too.
                     flow._process(result)
-                # 'done' is what `_process` writes once the document actually
-                # landed somewhere -- a supplier invoice created, or a
-                # lifecycle event matched to its invoice. Anything else left
-                # the flow in 'error' or short of processing, and the message
-                # has to stay on the platform.
-                if flow.state == "done":
-                    flow._fr_ctc_odoo_ack(session, result)
         return flows

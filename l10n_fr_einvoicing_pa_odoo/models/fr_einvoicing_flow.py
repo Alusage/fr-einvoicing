@@ -297,6 +297,24 @@ class FrEinvoicingFlow(models.Model):
             return
         logger.info("Flow %s acknowledged to the Odoo platform", self.display_name)
 
+    def _process(self, result):
+        """Acknowledge an incoming flow as soon as it has landed.
+
+        The acknowledgement rides here rather than on the import loop because
+        the cron has a second path: flows an earlier run left in 'downloaded'
+        are processed again further down, outside `_fr_ctc_run_import`. Hooking
+        the loop alone would leave a flow that failed once and succeeded later
+        acknowledged never, and the platform would keep offering it forever.
+        """
+        res = super()._process(result)
+        if (
+            self.direction == "in"
+            and self.state == "done"
+            and self.company_id._fr_ctc_is_pa_odoo()
+        ):
+            self._fr_ctc_odoo_ack(self.company_id._fr_ctc_get_session(), result)
+        return res
+
     def _update_status(self, session, result):
         """Ask the Odoo platform what became of a sent flow.
 
