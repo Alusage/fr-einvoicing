@@ -1700,6 +1700,11 @@ msgid "Last update of the flow"
 msgstr "Dernière mise à jour du flux"
 
 #. module: l10n_fr_einvoicing
+#: model_terms:ir.ui.view,arch_db:l10n_fr_einvoicing.view_account_invoice_filter
+msgid "Last event status"
+msgstr "État du dernier évènement"
+
+#. module: l10n_fr_einvoicing
 #: model:ir.model.fields.selection,name:l10n_fr_einvoicing.selection__fr_einvoicing_flow__type__customerinvoicelc
 msgid "Life Cycle for Customer Invoice/Refund"
 msgstr "Cycle de vie de la facture/avoir client"
