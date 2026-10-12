@@ -127,6 +127,9 @@ class ResCompany(models.Model):
     fr_ctc_get_in_invoice = fields.Boolean(
         default=True, string="Get Vendor Bills from AP"
     )
+    fr_ctc_auto_download_readable_invoice = fields.Boolean(
+        default=True, string="Auto Download Readable Invoice from AP"
+    )
 
     @api.depends("fr_ctc_auth_method")
     def _compute_fr_ctc_credentials(self):

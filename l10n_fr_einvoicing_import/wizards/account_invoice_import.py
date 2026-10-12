@@ -4,7 +4,7 @@
 
 import logging
 
-from odoo import api, models
+from odoo import Command, api, models
 
 logger = logging.getLogger(__name__)
 
@@ -52,4 +52,18 @@ class AccountInvoiceImport(models.TransientModel):
                 vals["journal_id"] = company_fr_dir_line.purchase_journal_id.id
         if parsed_inv.get("BT-23") and company_dict.get("country_code") == "FR":
             vals["business_process_type"] = f"fr_{parsed_inv['BT-23']}"
+        if import_config.get("fr_einvoicing_readable_file_bin") and import_config.get(
+            "fr_einvoicing_readable_filename"
+        ):
+            if not vals.get("attachment_ids"):
+                vals["attachment_ids"] = []
+            vals["attachment_ids"].append(
+                Command.create(
+                    {
+                        "raw": import_config["fr_einvoicing_readable_file_bin"],
+                        "name": import_config["fr_einvoicing_readable_filename"],
+                        "res_model": "account.move",
+                    }
+                )
+            )
         return vals

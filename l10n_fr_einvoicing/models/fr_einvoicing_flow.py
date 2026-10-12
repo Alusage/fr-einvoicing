@@ -47,7 +47,9 @@ class FrEinvoicingFlow(models.Model):
     # I don't usually do that, but I think it's the best option for such
     # a technical object that users won't use much
     identifier = fields.Char(readonly=True, tracking=True)  # flowId
-    company_id = fields.Many2one("res.company", ondelete="cascade", required=True)
+    company_id = fields.Many2one(
+        "res.company", ondelete="cascade", required=True, readonly=True
+    )
     direction = fields.Selection(
         [  # flowDirection
             ("in", "In"),
@@ -111,7 +113,16 @@ class FrEinvoicingFlow(models.Model):
             ("cii", "CII XML"),
         ],
         readonly=True,
-    )  # Only for out flows, when syntax in (UBL, CII, Factur-X)
+        string="Invoice Format",
+    )  # Now used both for in and out invoice flows
+    in_invoice_scenario = fields.Selection(
+        [
+            ("created", "Vendor Bill Created"),
+            ("matched", "Matched an Existing Vendor Bill"),
+        ],
+        string="Invoice Scenario",
+        readonly=True,
+    )
     profile = fields.Selection(
         [  # flowProfile
             ("Basic", "Basic"),
@@ -630,7 +641,9 @@ class FrEinvoicingFlow(models.Model):
         If you don't want to use the OCA module account_invoice_import, you can develop
         an alternative to l10n_fr_einvoicing_import and inherit this method"""
         self.ensure_one()
-        return (False, False)
+        invoice = False
+        flow_vals = {}
+        return (invoice, flow_vals)
 
     def _process(self, result):  # noqa: C901
         self.ensure_one()
@@ -659,7 +672,8 @@ class FrEinvoicingFlow(models.Model):
         msg = f"Start to process flow {self.display_name} ID {self.id} type {self.type}"
         log_obj._info_log(result, msg)
         if self.type == "SupplierInvoice":
-            move = error = data_dict = backtrace_str = None
+            move = error = backtrace_str = None
+            flow_vals = {}
             try:
                 # savepoint: on failure, we don't want to leave in the database a
                 # partial invoice. The creation can raise AFTER the INSERT (for example
@@ -668,7 +682,7 @@ class FrEinvoicingFlow(models.Model):
                 # Don't replace it by a cr.rollback() in the except: that would rollback
                 # the whole transaction of the job
                 with self.env.cr.savepoint():
-                    move, data_dict = self._import_supplier_invoice(result)
+                    move, flow_vals = self._import_supplier_invoice(result)
             except Exception as err:
                 error = str(err)
                 backtrace_str = traceback.format_exc()
@@ -678,7 +692,7 @@ class FrEinvoicingFlow(models.Model):
                 )
                 log_obj._warning_log(result, msg)
             if move:
-                flow_vals = {"state": "done", "data_dict": data_dict}
+                flow_vals.update({"state": "done"})
                 if "updated_count" in result:
                     result["updated_count"] += 1
                 if self.company_id.fr_ctc_event_auto_send_in_hand:
@@ -694,11 +708,12 @@ class FrEinvoicingFlow(models.Model):
                     err_details.append(f"Error: {error}")
                 if backtrace_str:
                     err_details.append(f"----- Backtrace -----\n{backtrace_str}")
-                flow_vals = {
-                    "state": "error",
-                    "odoo_error_details": "\n".join(err_details),
-                    "data_dict": data_dict,
-                }
+                flow_vals.update(
+                    {
+                        "state": "error",
+                        "odoo_error_details": "\n".join(err_details),
+                    }
+                )
                 msg = (
                     f"Odoo failed to create the supplier invoice/refund. "
                     f"Flow {self.display_name} ID {self.id} set to error state."

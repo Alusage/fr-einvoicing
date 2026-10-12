@@ -121,7 +121,11 @@
                             <field name="syntax" />
                             <field
                                 name="odoo_invoice_format"
-                                invisible="direction != 'out' or syntax not in ('UBL', 'CII', 'Factur-X')"
+                                invisible="type not in ('SupplierInvoice', 'CustomerInvoice')"
+                            />
+                            <field
+                                name="in_invoice_scenario"
+                                invisible="type != 'SupplierInvoice'"
                             />
                             <field name="profile" />
                             <field name="processing_rule" />

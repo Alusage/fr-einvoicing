@@ -76,6 +76,9 @@ class ResConfigSettings(models.TransientModel):
     fr_ctc_get_in_invoice = fields.Boolean(
         related="company_id.fr_ctc_get_in_invoice", readonly=False
     )
+    fr_ctc_auto_download_readable_invoice = fields.Boolean(
+        related="company_id.fr_ctc_auto_download_readable_invoice", readonly=False
+    )
     fr_directory_company_entity_type = fields.Selection(
         related="company_id.partner_id.fr_directory_entity_type",
         string="Company Directory Entity Type",
