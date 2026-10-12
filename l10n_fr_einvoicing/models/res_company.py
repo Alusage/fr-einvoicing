@@ -449,6 +449,7 @@ class ResCompany(models.Model):
             "syntax": flow_dict.get("flowSyntax"),
             "type": flow_dict.get("flowType"),
             "processing_rule": flow_dict.get("processingRule"),
+            "profile": flow_dict.get("flowProfile"),
             "updated_at": flow_dict.get("updated_at"),
             "submitted_at": flow_dict.get(
                 "submitted_at"

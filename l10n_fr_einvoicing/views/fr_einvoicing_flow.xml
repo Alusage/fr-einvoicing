@@ -127,7 +127,7 @@
                                 name="in_invoice_scenario"
                                 invisible="type != 'SupplierInvoice'"
                             />
-                            <field name="profile" />
+                            <field name="profile" invisible="not profile" />
                             <field name="processing_rule" />
                         </group>
                         <group name="main-right">
@@ -269,6 +269,25 @@
                     string="Identifier or Invoice"
                     filter_domain="['|', '|', ('identifier', 'ilike', self), ('move_id', 'ilike', self), ('auto_internal_move_id', '=', self)]"
                 />
+                <filter name="in" string="In" domain="[('direction', '=', 'in')]" />
+                <filter name="out" string="Out" domain="[('direction', '=', 'out')]" />
+                <separator />
+                <filter
+                    name="invoice_syntax"
+                    string="Invoice"
+                    domain="[('syntax', 'in', ('UBL', 'CII', 'Factur-X'))]"
+                />
+                <filter
+                    name="cadr_syntax"
+                    string="Event"
+                    domain="[('syntax', '=', 'CDAR')]"
+                />
+                <filter
+                    name="frr_syntax"
+                    string="eReporting"
+                    domain="[('syntax', '=', 'FRR')]"
+                />
+
                 <separator />
                 <filter
                     name="state_created"
@@ -306,42 +325,27 @@
                     domain="[('state', '=', 'ap_unknown')]"
                 />
                 <separator />
-                <filter name="in" string="In" domain="[('direction', '=', 'in')]" />
-                <filter name="out" string="Out" domain="[('direction', '=', 'out')]" />
-                <separator />
-                <filter name="cii" string="CII" domain="[('syntax', '=', 'CII')]" />
-                <filter name="ubl" string="UBL" domain="[('syntax', '=', 'UBL')]" />
-                <filter
-                    name="facturx"
-                    string="Factur-X"
-                    domain="[('syntax', '=', 'Factur-X')]"
-                />
-                <filter name="cadr" string="CDAR" domain="[('syntax', '=', 'CDAR')]" />
-                <filter
-                    name="frr"
-                    string="eReporting"
-                    domain="[('syntax', '=', 'FRR')]"
-                />
                 <group name="groupby">
                     <filter
-                        name="state_groupby"
-                        string="State"
-                        context="{'group_by': 'state'}"
+                        name="direction_groupby"
+                        string="Direction"
+                        context="{'group_by': 'direction'}"
                     />
                     <filter
                         name="type_groupby"
                         string="Type"
                         context="{'group_by': 'type'}"
                     />
+
+                    <filter
+                        name="state_groupby"
+                        string="State"
+                        context="{'group_by': 'state'}"
+                    />
                     <filter
                         name="syntax_groupby"
                         string="Syntax"
                         context="{'group_by': 'syntax'}"
-                    />
-                    <filter
-                        name="profile_groupby"
-                        string="Profile"
-                        context="{'group_by': 'profile'}"
                     />
                     <filter
                         name="processing_rule_groupby"
