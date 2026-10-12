@@ -5,11 +5,12 @@
 
 import base64
 import logging
+from datetime import timezone
 from io import BytesIO
 from pprint import pformat
 from urllib.parse import urljoin
+from zoneinfo import ZoneInfo
 
-import pytz
 from pypdf import PdfWriter
 from pypdf.generic import NameObject
 
@@ -411,13 +412,13 @@ class AccountMove(models.Model):
                     ]
                     if delivery_datetimes:
                         delivery_datetime_naive_utc = max(delivery_datetimes)
-                        delivery_datetime_aware_utc = pytz.utc.localize(
-                            delivery_datetime_naive_utc
+                        delivery_datetime_aware_utc = (
+                            delivery_datetime_naive_utc.replace(tzinfo=timezone.utc)
                         )
                         user_tz = (
                             self.env.user.tz
-                            and pytz.timezone(self.env.user.tz)
-                            or pytz.utc
+                            and ZoneInfo(self.env.user.tz)
+                            or timezone.utc
                         )
                         delivery_datetime_aware_usertz = (
                             delivery_datetime_aware_utc.astimezone(user_tz)
