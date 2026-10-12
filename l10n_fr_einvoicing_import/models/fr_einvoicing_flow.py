@@ -38,7 +38,11 @@ class FrEinvoicingFlow(models.Model):
             self.sudo().write({"data_dict": data_dict})
             invoice = inv_import_obj.create_invoice(data_dict, import_config)
             if import_config.get("existing_invoice_matched"):
-                invoice.write({"fr_einvoicing_flow_id": self.id})
+                invoice.write(
+                    self._prepare_matched_invoice_write(
+                        invoice, data_dict, import_config
+                    )
+                )
                 invoice.message_post(
                     body=Markup(
                         self.env._(
@@ -57,3 +61,26 @@ class FrEinvoicingFlow(models.Model):
                 self.env["fr.einvoicing.log"]._info_log(result, msg)
             data_dict_for_log = get_data_dict_copy_for_logs(data_dict)
         return invoice, data_dict_for_log
+
+    def _prepare_matched_invoice_write(self, invoice, data_dict, import_config):
+        wvals = {"fr_einvoicing_flow_id": self.id}
+        inv_vals = self.env["account.invoice.import"]._prepare_create_invoice_vals(
+            data_dict, import_config
+        )
+        if (
+            inv_vals.get("fr_directory_line_identifier")
+            and not invoice.fr_directory_line_identifier
+        ):
+            wvals["fr_directory_line_identifier"] = inv_vals[
+                "fr_directory_line_identifier"
+            ]
+        if (
+            inv_vals.get("company_fr_directory_line_id")
+            and not invoice.company_fr_directory_line_id
+        ):
+            wvals["company_fr_directory_line_id"] = inv_vals[
+                "company_fr_directory_line_id"
+            ]
+        if inv_vals.get("business_process_type") and not invoice.business_process_type:
+            wvals["business_process_type"] = inv_vals["business_process_type"]
+        return wvals
