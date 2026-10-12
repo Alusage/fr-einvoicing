@@ -959,6 +959,14 @@ class FrEinvoicingFlow(models.Model):
             )
             log_obj._warning_log(result, msg)
             return False
+        if move.reversed_entry_id:
+            msg = (
+                f"No auto-reversal because invoice {move.display_name} "
+                f"ID {move.id} is already a reverse of move "
+                f"{move.reversed_entry_id.display_name}."
+            )
+            log_obj._warning_log(result, msg)
+            return False
         lang = move.partner_id.lang
         status_label = dict(
             event._fields["status"]._description_selection(
