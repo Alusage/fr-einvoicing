@@ -682,11 +682,18 @@ class FrEinvoicingFlow(models.Model):
                 # the whole transaction of the job
                 with self.env.cr.savepoint():
                     move, flow_vals = self._import_supplier_invoice(result)
+            except UserError as err:
+                error = str(err)
+                msg = (
+                    f"Error in the creation of the supplier invoice/refund from flow "
+                    f"{self.display_name} ID {self.id}: {error}"
+                )
+                log_obj._warning_log(result, msg)
             except Exception as err:
                 error = str(err)
                 backtrace_str = traceback.format_exc()
                 msg = (
-                    f"Error in creation of the supplier invoice/refund from flow "
+                    f"Crash in the creation of the supplier invoice/refund from flow "
                     f"{self.display_name} ID {self.id}: {error}"
                 )
                 log_obj._warning_log(result, msg)
@@ -702,15 +709,20 @@ class FrEinvoicingFlow(models.Model):
                     )
                     log_obj._info_log(result, msg)
             else:
-                err_details = ["Odoo failed to created the supplier invoice/refund."]
-                if error:
-                    err_details.append(f"Error: {error}")
                 if backtrace_str:
-                    err_details.append(f"----- Backtrace -----\n{backtrace_str}")
+                    err_details = (
+                        f"Odoo crashed while trying to create the supplier "
+                        f"invoice/refund.\n----- Backtrace -----\n{backtrace_str}"
+                    )
+                else:
+                    err_details = (
+                        f"Odoo raised the following error during the creation of the "
+                        f"supplier invoice/refund: {error}"
+                    )
                 flow_vals.update(
                     {
                         "state": "error",
-                        "odoo_error_details": "\n".join(err_details),
+                        "odoo_error_details": err_details,
                     }
                 )
                 msg = (
