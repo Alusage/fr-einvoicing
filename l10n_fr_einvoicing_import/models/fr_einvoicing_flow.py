@@ -5,6 +5,8 @@
 import base64
 import logging
 
+from markupsafe import Markup
+
 from odoo import models
 
 logger = logging.getLogger(__name__)
@@ -27,6 +29,7 @@ class FrEinvoicingFlow(models.Model):
                 "company": self.company_id,
                 "origin": self.identifier,
                 "invoice_extra_vals": {"fr_einvoicing_flow_id": self.id},
+                "if_already_exists": "match",
             }
             inv_import_obj = self.env["account.invoice.import"]
             data_dict = inv_import_obj.parse_invoice(
@@ -34,7 +37,23 @@ class FrEinvoicingFlow(models.Model):
             )
             self.sudo().write({"data_dict": data_dict})
             invoice = inv_import_obj.create_invoice(data_dict, import_config)
-            msg = f"Invoice {invoice.display_name} ID {invoice.id} successfully created"
-            self.env["fr.einvoicing.log"]._info_log(result, msg)
+            if import_config.get("existing_invoice_matched"):
+                invoice.write({"fr_einvoicing_flow_id": self.id})
+                invoice.message_post(
+                    body=Markup(
+                        self.env._(
+                            "<strong>Import from AP matched this existing "
+                            "invoice</strong>. Odoo linked it to the e-invoicing "
+                            "flow but keep in mind that this vendor bill "
+                            "hasn't been created from the flow."
+                        )
+                    )
+                )
+            else:
+                msg = (
+                    f"Invoice {invoice.display_name} ID {invoice.id} successfully "
+                    "created"
+                )
+                self.env["fr.einvoicing.log"]._info_log(result, msg)
             data_dict_for_log = get_data_dict_copy_for_logs(data_dict)
         return invoice, data_dict_for_log
