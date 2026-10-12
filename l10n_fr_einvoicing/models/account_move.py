@@ -693,8 +693,8 @@ class AccountMove(models.Model):
             processing_rule = "B2G"
         else:
             processing_rule = "OutOfScope"
-        odoo_invoice_format = self.company_id.fr_ctc_send_invoice_format or "facturx"
-        odoo_invoice_format2SYNTAX = {
+        invoice_format = self.company_id.fr_ctc_send_invoice_format or "facturx"
+        invoice_format2SYNTAX = {
             "facturx": "Factur-X",
             "ubl_pdf": "UBL",
             "ubl": "UBL",
@@ -703,8 +703,8 @@ class AccountMove(models.Model):
         }
         vals = {
             "direction": "out",
-            "syntax": odoo_invoice_format2SYNTAX[odoo_invoice_format],
-            "odoo_invoice_format": odoo_invoice_format,
+            "syntax": invoice_format2SYNTAX[invoice_format],
+            "invoice_format": invoice_format,
             "processing_rule": processing_rule,
             "type": "CustomerInvoice",
             "company_id": self.company_id.id,

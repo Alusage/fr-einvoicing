@@ -119,7 +119,7 @@ class FrEinvoicingFlow(models.Model):
             data_dict_for_log = get_data_dict_copy_for_logs(data_dict)
             flow_vals = {
                 "data_dict": data_dict_for_log,
-                "odoo_invoice_format": invoice_format,
+                "invoice_format": invoice_format,
                 "in_invoice_scenario": scenario,
             }
         return invoice, flow_vals

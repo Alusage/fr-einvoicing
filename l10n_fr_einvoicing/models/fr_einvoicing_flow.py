@@ -104,7 +104,7 @@ class FrEinvoicingFlow(models.Model):
         ],
         readonly=True,
     )
-    odoo_invoice_format = fields.Selection(
+    invoice_format = fields.Selection(
         [
             ("facturx", "Factur-X"),
             ("ubl_pdf", "UBL XML with embedded PDF file"),
@@ -113,7 +113,6 @@ class FrEinvoicingFlow(models.Model):
             ("cii", "CII XML"),
         ],
         readonly=True,
-        string="Invoice Format",
     )  # Now used both for in and out invoice flows
     in_invoice_scenario = fields.Selection(
         [
@@ -342,10 +341,10 @@ class FrEinvoicingFlow(models.Model):
             assert len(self.move_ids) == 1
             move = self.move_ids
             if self.syntax in ("Factur-X", "UBL", "CII"):
-                filename = move._prepare_en16931_filename(self.odoo_invoice_format)
+                filename = move._prepare_en16931_filename(self.invoice_format)
                 try:
                     file_b64, data_dict = move._get_en16931_invoice_bin(
-                        self.odoo_invoice_format, b64=True
+                        self.invoice_format, b64=True
                     )
                 except Exception as err:
                     msg = (

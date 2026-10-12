@@ -120,7 +120,7 @@
                             <field name="type" />
                             <field name="syntax" />
                             <field
-                                name="odoo_invoice_format"
+                                name="invoice_format"
                                 invisible="type not in ('SupplierInvoice', 'CustomerInvoice')"
                             />
                             <field
