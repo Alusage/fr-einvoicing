@@ -946,5 +946,20 @@ class ResPartner(models.Model):
     def fr_reset_directory(self):
         self.ensure_one()
         self.fr_directory_line_ids.unlink()
-        self.fr_directory_siren = False
-        self.fr_directory_siret = False
+        self.write(
+            {
+                "fr_directory_siren": False,
+                "fr_directory_siret": False,
+            }
+        )
+        self.message_post(
+            body=Markup(
+                self.env._(
+                    "<strong>Reset of the query SIREN/SIRET</strong> "
+                    "and deletion of all directory lines. "
+                    "Reminder: this feature is dangerous, it should not be used to "
+                    "change a partner that is already linked to invoices or other "
+                    "business documents in Odoo to point to another legal entity."
+                )
+            )
+        )
