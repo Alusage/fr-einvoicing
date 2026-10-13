@@ -508,6 +508,26 @@ class AccountMove(models.Model):
                     "BT-26": self.reversed_entry_id.invoice_date,
                 }
             )
+        elif (
+            self.move_type == "out_refund"
+            and speedy["sale_installed"]
+            and self.invoice_line_ids.sale_line_ids
+            and self.invoice_line_ids.sale_line_ids.invoice_lines.move_id.filtered(
+                lambda x: x.move_type == "out_invoice" and x.state == "posted"
+            )
+        ):
+            related_invoice = (
+                self.invoice_line_ids.sale_line_ids.invoice_lines.move_id.filtered(
+                    lambda x: x.move_type == "out_invoice" and x.state == "posted"
+                )[0]
+            )
+            res.append(
+                {
+                    "BT-25": related_invoice.name,
+                    "EXT-FR-FE-02": related_invoice.invoice_type_code,
+                    "BT-26": related_invoice.invoice_date,
+                }
+            )
         elif self.move_type in ("out_refund", "in_refund"):
             # BG-3 is required for refunds (stupid rules G1.31 + G1.32)
             res.append(
