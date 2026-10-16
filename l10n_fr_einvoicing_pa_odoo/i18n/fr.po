@@ -1,0 +1,88 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* l10n_fr_einvoicing_pa_odoo
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 18.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-16 12:00+0000\n"
+"PO-Revision-Date: 2026-10-16 12:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: l10n_fr_einvoicing_pa_odoo
+#. odoo-python
+#: code:addons/l10n_fr_einvoicing_pa_odoo/models/res_company.py:0
+msgid ""
+"Company '%s' is set to send and receive through the Odoo accredited "
+"platform, but it is not registered on it yet."
+msgstr ""
+"La société « %s » est configurée pour envoyer et recevoir par la plateforme "
+"agréée Odoo, mais elle n'y est pas encore inscrite."
+
+#. module: l10n_fr_einvoicing_pa_odoo
+#: model:ir.model,name:l10n_fr_einvoicing_pa_odoo.model_res_company
+msgid "Companies"
+msgstr "Sociétés"
+
+#. module: l10n_fr_einvoicing_pa_odoo
+#: model:ir.model,name:l10n_fr_einvoicing_pa_odoo.model_res_config_settings
+msgid "Config Settings"
+msgstr "Paramètres de configuration"
+
+#. module: l10n_fr_einvoicing_pa_odoo
+#: model:ir.model,name:l10n_fr_einvoicing_pa_odoo.model_account_move
+msgid "Journal Entry"
+msgstr "Pièce comptable"
+
+#. module: l10n_fr_einvoicing_pa_odoo
+#: model:ir.model,name:l10n_fr_einvoicing_pa_odoo.model_res_partner
+msgid "Contact"
+msgstr "Contact"
+
+#. module: l10n_fr_einvoicing_pa_odoo
+#: model_terms:ir.ui.view,arch_db:l10n_fr_einvoicing_pa_odoo.res_config_settings_view_form
+msgid ""
+"Flows travel through the Odoo accredited platform, the directory stays on "
+"the accredited platform selected above"
+msgstr ""
+"Les flux transitent par la plateforme agréée Odoo, l'annuaire reste sur la "
+"plateforme agréée sélectionnée ci-dessus"
+
+#. module: l10n_fr_einvoicing_pa_odoo
+#: model:ir.model.fields,field_description:l10n_fr_einvoicing_pa_odoo.field_account_bank_statement_line__fr_ctc_transport_odoo
+#: model:ir.model.fields,field_description:l10n_fr_einvoicing_pa_odoo.field_account_move__fr_ctc_transport_odoo
+#: model:ir.model.fields,field_description:l10n_fr_einvoicing_pa_odoo.field_res_company__fr_ctc_transport_odoo
+#: model:ir.model.fields,field_description:l10n_fr_einvoicing_pa_odoo.field_res_config_settings__fr_ctc_transport_odoo
+msgid "Send and receive through the Odoo accredited platform"
+msgstr "Envoyer et recevoir par la plateforme agréée Odoo"
+
+#. module: l10n_fr_einvoicing_pa_odoo
+#: model:ir.model.fields,help:l10n_fr_einvoicing_pa_odoo.field_res_company__fr_ctc_transport_odoo
+#: model:ir.model.fields,help:l10n_fr_einvoicing_pa_odoo.field_res_config_settings__fr_ctc_transport_odoo
+msgid ""
+"Send the outgoing flows, receive the incoming ones and read their status "
+"through the Odoo accredited platform, with the registration made by the "
+"native French e-invoicing module. The directory lookups keep using the "
+"accredited platform selected above and its credentials."
+msgstr ""
+"Envoyer les flux sortants, recevoir les flux entrants et lire leur statut "
+"par la plateforme agréée Odoo, avec l'inscription faite par le module natif "
+"de facturation électronique française. Les consultations de l'annuaire "
+"continuent d'utiliser la plateforme agréée sélectionnée ci-dessus et ses "
+"identifiants."
+
+#. module: l10n_fr_einvoicing_pa_odoo
+#. odoo-python
+#: code:addons/l10n_fr_einvoicing_pa_odoo/models/account_move.py:0
+msgid ""
+"The Odoo accredited platform does not provide a readable version of vendor "
+"bill %s."
+msgstr ""
+"La plateforme agréée Odoo ne fournit pas de version lisible de la facture "
+"fournisseur %s."

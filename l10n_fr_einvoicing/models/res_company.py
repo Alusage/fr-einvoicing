@@ -5,6 +5,7 @@
 import logging
 import os
 from datetime import datetime, timedelta
+from urllib.parse import urljoin
 
 from odoo import api, fields, models, tools
 from odoo.exceptions import UserError
@@ -14,8 +15,8 @@ logger = logging.getLogger(__name__)
 try:
     from pyfrctc import (
         get_authorization_url,
+        get_directory_siren,
         get_session,
-        healthcheck,
         search_flows_parsed,
     )
 except (OSError, ImportError) as err:
@@ -43,9 +44,6 @@ class ResCompany(models.Model):
         ],
         string="Authentication Method for AP",
     )
-    fr_ctc_refresh_token = fields.Char(readonly=True, groups="base.group_system")
-    fr_ctc_access_token = fields.Char(readonly=True, groups="base.group_system")
-    fr_ctc_access_token_expiry = fields.Float(readonly=True, groups="base.group_system")
     fr_ctc_client_id = fields.Char(
         groups="base.group_system",
         string="Client ID for AP",
@@ -78,7 +76,6 @@ class ResCompany(models.Model):
     )
     fr_ctc_auto_reverse = fields.Boolean(
         string="Auto Reverse Invoice if Refused/Rejected",
-        default=True,
     )
     fr_ctc_event_auto_send_in_hand = fields.Boolean(
         string="Auto Send In Hand Event",
@@ -117,9 +114,22 @@ class ResCompany(models.Model):
         default="not_blocking",
         string="Directory Sync on Invoice Confirmation",
     )
-    fr_ctc_disable_private_invoice_sending = fields.Boolean(
-        string="Deactivate automatic invoice sending for private customers"
-    )  # To delete when useless
+    fr_ctc_send_out_invoice = fields.Selection(
+        [
+            ("all", "All"),
+            ("b2g", "B2G only"),
+            ("b2b", "B2B only"),
+            ("none", "No"),
+        ],
+        string="Send Customer Invoices/Refunds via AP",
+        default="all",
+    )
+    fr_ctc_get_in_invoice = fields.Boolean(
+        default=True, string="Get Vendor Bills from AP"
+    )
+    fr_ctc_auto_download_readable_invoice = fields.Boolean(
+        default=True, string="Auto Download Readable Invoice from AP"
+    )
 
     @api.depends("fr_ctc_auth_method")
     def _compute_fr_ctc_credentials(self):
@@ -361,13 +371,19 @@ class ResCompany(models.Model):
         )
         log_obj._info_log(result, msg)
         types_to_get = [
-            "SupplierInvoice",
             "CustomerInvoiceLC",
             "SupplierInvoiceLC",
             # "StateCustomerInvoiceLC",  gives error :
-            # RuntimeError: POST request on https://api.superpdp.tech/afnor-flow/v1/flows/search failed (400). Error code: PARAMS_ERROR. Error message: json: cannot unmarshal into Go model.AfnorFlowType within "/where/flowType/3": invalid flowType : 'StateCustomerInvoiceLC'
+            #  RuntimeError: POST request on
+            #  https://api.superpdp.tech/afnor-flow/v1/flows/search failed (400).
+            #  Error code: PARAMS_ERROR. Error message: json: cannot unmarshal
+            #  into Go model.AfnorFlowType within "/where/flowType/3":
+            #  invalid flowType : 'StateCustomerInvoiceLC'
             # "StateSupplierInvoiceLC",
         ]
+        if self.fr_ctc_get_in_invoice:
+            types_to_get.append("SupplierInvoice")
+        logger.debug(f"types_to_get for search flows: {types_to_get}")
         res_search = search_flows_parsed(session, updated_after, ["in"], types_to_get)
         msg = f"Got {len(res_search)} flows updated after {updated_after} UTC"
         log_obj._info_log(result, msg)
@@ -433,6 +449,7 @@ class ResCompany(models.Model):
             "syntax": flow_dict.get("flowSyntax"),
             "type": flow_dict.get("flowType"),
             "processing_rule": flow_dict.get("processingRule"),
+            "profile": flow_dict.get("flowProfile"),
             "updated_at": flow_dict.get("updated_at"),
             "submitted_at": flow_dict.get(
                 "submitted_at"
@@ -451,13 +468,19 @@ class ResCompany(models.Model):
             )
         if not self.is_france_country:
             return False
+        if not self.fr_ctc_accredited_platform:
+            # we don't raise if misconfigured here because we need this solution
+            # to by-pass the checks on invoice/SO confirmation for an FR company
+            # that is not onboarded yet
+            logger.info(f"No AP selected for company {self.display_name}")
+            return False
         cpartner = self.partner_id
         if not cpartner.fr_directory_entity_type:
             if raise_if_misconfigured:
                 raise UserError(
                     self.env._(
                         "Entity type is not set on partner '%s'. On that partner, "
-                        "click on the button 'Get/Update Directory Lines'.",
+                        "click on the button 'Directory Sync'.",
                         cpartner.display_name,
                     )
                 )
@@ -486,9 +509,16 @@ class ResCompany(models.Model):
         platform_label = dict(
             self._fields["fr_ctc_accredited_platform"]._description_selection(self.env)
         )[platform]
+        test_siren = "110043015"  # Ministère de l'Education Nationale
         try:
             session = self._fr_ctc_get_session()
-            healthcheck(session)
+            # I don't use healthcheck(), because it works even if session is ko
+            # so we now use a directory query
+            res = get_directory_siren(session, "110043015")
+            if not isinstance(res, dict):
+                raise ValueError("Directory query answer is not a dict")
+            if res.get("siren") != test_siren:
+                raise ValueError("Wrong value for SIREN in answer dict")
         except Exception as err:
             raise UserError(
                 self.env._(
@@ -516,7 +546,7 @@ class ResCompany(models.Model):
         base_url = self.env["ir.config_parameter"].get_param("web.base.url")
         if base_url.startswith("http://"):
             os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
-        return f"{base_url}{CALLBACK_PATH}"
+        return urljoin(base_url, CALLBACK_PATH)
 
     def _fr_ctc_authorization_code_redirect(self):
         self.ensure_one()
@@ -532,6 +562,7 @@ class ResCompany(models.Model):
             else:
                 optional_uri_params["superpdp_company_number_scheme"] = "fr_siren"
         redirect_uri = self._fr_ctc_redirect_uri()
+        logger.info(f"Redirect URI sent to the accredited platform: {redirect_uri}")
         authorization_url, state, code_verifier = get_authorization_url(
             self.fr_ctc_accredited_platform,
             client_id,
@@ -564,12 +595,138 @@ class ResCompany(models.Model):
             domain.append(("date", ">", self.hard_lock_date))
         invoices = self.env["account.move"].search(domain)
         logger.info(
-            "Recomputing field company_fr_directory_line_id on %d invoices in company %s",
+            "Recomputing field company_fr_directory_line_id on %d invoices "
+            "in company %s",
             len(invoices),
             self.display_name,
         )
         invoices._compute_company_fr_directory_line_id()
         logger.info(
-            "Recomputation of field company_fr_directory_line_id in company %s finished",
+            "Recomputation of field company_fr_directory_line_id in company %s "
+            "finished",
             self.display_name,
         )
+
+    def _fr_ctc_superpdp_sandbox_create(
+        self, burger_queen_suffix="1242", tricatel_suffix="1243"
+    ):
+        # WARNING: Burger Queen and Tricatel suffixes are different in earch sandbox
+        # so you MUST customize the 2 arguments
+        logger.info("Start to create a SUPER PDP sandbox")
+        if tools.config.get("running_env") not in ("test", "dev"):
+            logger.warning(
+                "You are trying to create a SUPER PDP sandbox but running_env is not "
+                "test/dev. Aborting."
+            )
+            return False
+        last_sync_date = fields.Date.context_today(self) - timedelta(1)
+        burger_queen = self.env["res.company"].create(
+            {
+                "name": "Burger Queen",
+                "street": "809 avenue du Languedoc",
+                "zip": "12100",
+                "city": "Millau",
+                "country_id": self.env.ref("base.fr").id,
+                "fr_ctc_auth_method": "authorization_code",
+            }
+        )
+        burger_queen_partner = burger_queen.partner_id
+        # Set VAT and SIREN by SQL to by-pass constraints
+        self.env.cr.execute(
+            """
+            UPDATE res_partner
+            SET vat='FR18000000002',
+            siren='000000002',
+            siret='000000002*****',
+            fr_directory_entity_type='private',
+            fr_directory_name='Burger Queen',
+            fr_directory_siren='000000002',
+            fr_directory_last_sync_date=%s
+            WHERE id=%s
+            """,
+            (last_sync_date, burger_queen_partner.id),
+        )
+        self.env.cr.execute(
+            "UPDATE res_company SET siren='000000002' WHERE id=%s", (burger_queen.id,)
+        )
+        self.env["fr.directory.line"].create(
+            {
+                "partner_id": burger_queen_partner.id,
+                "identifier": f"315143296_{burger_queen_suffix}",
+                "type": "suffix",
+                "siren": "315143296",
+                "suffix": burger_queen_suffix,
+                "state": "active",
+            }
+        )
+        logger.info("Company Burger Queen created ID %s", burger_queen.id)
+        tricatel = self.env["res.company"].create(
+            {
+                "name": "Tricatel",
+                "street": "Avenue de la République",
+                "zip": "37170",
+                "city": "Chambray-lès-Tours",
+                "country_id": self.env.ref("base.fr").id,
+                "fr_ctc_auth_method": "authorization_code",
+            }
+        )
+        tricatel_partner = tricatel.partner_id
+        # Set VAT and SIREN by SQL to by-pass constraints
+        self.env.cr.execute(
+            """
+            UPDATE res_partner
+            SET vat='FR15000000001',
+            siren='000000001',
+            siret='000000001*****',
+            fr_directory_entity_type='private',
+            fr_directory_name='Tricatel',
+            fr_directory_siren='000000001',
+            fr_directory_last_sync_date=%s
+            WHERE id=%s
+            """,
+            (last_sync_date, tricatel_partner.id),
+        )
+        self.env.cr.execute(
+            "UPDATE res_company SET siren='000000001' WHERE id=%s", (tricatel.id,)
+        )
+        self.env["fr.directory.line"].create(
+            {
+                "partner_id": tricatel_partner.id,
+                "identifier": f"315143296_{tricatel_suffix}",
+                "type": "suffix",
+                "siren": "315143296",
+                "suffix": tricatel_suffix,
+                "state": "active",
+            }
+        )
+        logger.info("Company Tricatel created ID %s", tricatel.id)
+
+    def _fr_ctc_superpdp_sandbox_setup(self):
+        logger.info("Start to setup an existing SUPER PDP sandbox")
+        companies = self.env["res.company"].search(
+            [
+                ("partner_id.country_id", "=", self.env.ref("base.fr").id),
+                ("siren", "in", ("000000001", "000000002")),
+            ]
+        )
+        if len(companies) != 2:
+            logger.warning(
+                "Aborting setup: could not find Burger Queen and/or Tricatel"
+            )
+            return False
+        tax_domain = [
+            ("type_tax_use", "=", "sale"),
+            ("unece_type_code", "=", "VAT"),
+            ("unece_categ_code", "=", "E"),
+            ("unece_vatex_id", "=", False),
+            ("active", "=", True),
+        ]
+        sample_vatex_id = self.env.ref("account_tax_unece.tax_vatex_fr_cgi261c_3").id
+        exempt_vat_taxes = (
+            self.env["account.tax"]
+            .sudo()
+            .search([("company_id", "in", companies.ids)] + tax_domain)
+        )
+        if exempt_vat_taxes:
+            exempt_vat_taxes.write({"unece_vatex_id": sample_vatex_id})
+            logger.info("VATEX set on taxes IDs %s", exempt_vat_taxes.ids)

@@ -4,7 +4,7 @@
 
 {
     "name": "France eInvoicing",
-    "version": "18.0.1.2.0",
+    "version": "18.0.1.3.0",
     "category": "Accounting",
     "license": "AGPL-3",
     "summary": "Community implementation of the e-invoicing reform for France",
@@ -12,11 +12,9 @@
     "maintainers": ["alexis-via"],
     "website": "https://github.com/akretion/fr-einvoicing",
     "depends": [
-        "l10n_fr_siret_account",
         "l10n_fr_account_invoice_en16931",
     ],
-    # "excludes": ["l10n_fr_chorus_account"],  # we need the module for the transition
-    "external_dependencies": {"python": ["pyfrctc>=0.14"]},
+    "external_dependencies": {"python": ["pyfrctc>=0.24"]},
     "data": [
         "security/ir.model.access.csv",
         "security/ir_rule.xml",
@@ -26,7 +24,9 @@
         "wizards/fr_einvoicing_company_directory_sync_view.xml",
         "wizards/res_config_settings_view.xml",
         "wizards/fr_einvoicing_event_manual_view.xml",
+        "wizards/fr_einvoicing_flow_cancel_view.xml",
         "wizards/account_move_reversal_view.xml",
+        "wizards/fr_einvoicing_account_move_cancel.xml",
         "views/menu.xml",
         "views/fr_directory_line.xml",
         "views/fr_einvoicing_flow.xml",
@@ -37,6 +37,5 @@
         "views/fr_einvoicing_log.xml",
         "views/onboarding_templates.xml",
     ],
-    "demo": ["demo/partner_demo.xml"],
     "installable": True,
 }

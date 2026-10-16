@@ -22,8 +22,10 @@
     "website": "https://github.com/akretion/fr-einvoicing",
     "depends": [
         "l10n_fr_einvoicing",
-        "account_invoice_import",
+        "l10n_fr_account_invoice_import",
     ],
-    "data": ["views/account_journal.xml"],
+    "external_dependencies": {"python": ["factur-x>=7.5"]},
+    "data": ["views/account_journal.xml", "views/fr_directory_line.xml"],
     "installable": True,
+    "auto_install": True,
 }

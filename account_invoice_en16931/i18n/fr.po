@@ -6,9 +6,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 18.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-10 16:26+0000\n"
-"PO-Revision-Date: 2026-07-10 16:26+0000\n"
-"Last-Translator: Rémi Cazenave - Le Filament\n"
+"POT-Creation-Date: 2026-08-08 11:49+0000\n"
+"PO-Revision-Date: 2026-08-08 11:49+0000\n"
+"Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -28,8 +28,59 @@ msgid "(no date)"
 msgstr "(pas de date)"
 
 #. module: account_invoice_en16931
+#: model:ir.model.fields,field_description:account_invoice_en16931.field_account_invoice_en16931_generate__archive_format
+msgid "Archive Format"
+msgstr "Format d'archive"
+
+#. module: account_invoice_en16931
+#: model:ir.model.fields,help:account_invoice_en16931.field_account_bank_statement_line__invoice_attachment_ids
+#: model:ir.model.fields,help:account_invoice_en16931.field_account_move__invoice_attachment_ids
+msgid ""
+"Attachments added to the electronic invoice. In UBL and CII XML, these "
+"attachments are added in the XML (BG-24 / BT-125). In Factur-X, these "
+"attachments are added as additional attachments of the PDF."
+msgstr ""
+"Pièces jointes ajoutées à la facture électronique. En UBL et CII XML, ces "
+"pièces jointes sont ajoutées dans le XML (BG-24 / BT-125). En Factur-X, ces "
+"pièces jointes sont ajoutées comme des pièces jointes supplémentaires du "
+"PDF."
+
+#. module: account_invoice_en16931
+#: model:ir.model.fields,field_description:account_invoice_en16931.field_account_bank_statement_line__business_process_type
+#: model:ir.model.fields,field_description:account_invoice_en16931.field_account_move__business_process_type
+msgid "Business Process Type"
+msgstr "Type de processus métier"
+
+#. module: account_invoice_en16931
+#: model:ir.model.fields,help:account_invoice_en16931.field_account_bank_statement_line__business_process_type
+#: model:ir.model.fields,help:account_invoice_en16931.field_account_move__business_process_type
+msgid "Business Term BT-23 in EN16931"
+msgstr "Terme métier BT-23 dans l'EN16931"
+
+#. module: account_invoice_en16931
+#: model:ir.model.fields,help:account_invoice_en16931.field_account_bank_statement_line__invoice_type_code
+#: model:ir.model.fields,help:account_invoice_en16931.field_account_move__invoice_type_code
+msgid "Business Term BT-3 in EN16931"
+msgstr "Terme métier BT-3 dans l'EN16931"
+
+#. module: account_invoice_en16931
+#: model:ir.model.fields.selection,name:account_invoice_en16931.selection__account_invoice_en16931_generate__invoice_format__cii
+msgid "CII XML"
+msgstr "XML CII"
+
+#. module: account_invoice_en16931
+#: model:ir.model.fields.selection,name:account_invoice_en16931.selection__account_invoice_en16931_generate__invoice_format__cii_pdf
+msgid "CII XML with embedded PDF file"
+msgstr "XML CII avec fichier PDF embarqué"
+
+#. module: account_invoice_en16931
+#: model_terms:ir.ui.view,arch_db:account_invoice_en16931.account_invoice_en16931_form
+msgid "Cancel"
+msgstr "Annuler"
+
+#. module: account_invoice_en16931
 #: model:ir.model.fields.selection,name:account_invoice_en16931.selection__account_move__invoice_type_code__380
-msgid "Commercial invoice"
+msgid "Commercial Invoice"
 msgstr "Facture commerciale"
 
 #. module: account_invoice_en16931
@@ -41,7 +92,7 @@ msgstr "Sociétés"
 #: model:ir.model.fields,field_description:account_invoice_en16931.field_res_company__no_vat_taxes_vatex_id
 #: model:ir.model.fields,field_description:account_invoice_en16931.field_res_config_settings__no_vat_taxes_vatex_id
 msgid "Company VAT Exemption Reason"
-msgstr "Cause d'exemption de la TVA de la société"
+msgstr "Motif d'exonération de TVA de la société"
 
 #. module: account_invoice_en16931
 #: model:ir.model.fields,field_description:account_invoice_en16931.field_res_company__no_vat_taxes
@@ -61,24 +112,41 @@ msgstr ""
 
 #. module: account_invoice_en16931
 #: model:ir.model.fields.selection,name:account_invoice_en16931.selection__account_move__invoice_type_code__384
-msgid "Corrected invoice"
-msgstr "Facture corrective"
+msgid "Corrected Invoice"
+msgstr "Facture rectificative"
 
 #. module: account_invoice_en16931
 #. odoo-python
 #: code:addons/account_invoice_en16931/models/res_partner.py:0
 msgid "Country is not set on partner '%s'. Country is required in EN16931."
-msgstr "Le pays n'est pas configuré sur le contact '%s'. Le pays est requis pour EN16931."
+msgstr ""
+"Le pays n'est pas renseigné sur le contact '%s'. Le pays est requis pour "
+"EN16931."
+
+#. module: account_invoice_en16931
+#: model:ir.model.fields,field_description:account_invoice_en16931.field_account_invoice_en16931_generate__create_uid
+msgid "Created by"
+msgstr "Créé par"
+
+#. module: account_invoice_en16931
+#: model:ir.model.fields,field_description:account_invoice_en16931.field_account_invoice_en16931_generate__create_date
+msgid "Created on"
+msgstr "Créé le"
 
 #. module: account_invoice_en16931
 #: model:ir.model.fields.selection,name:account_invoice_en16931.selection__account_move__invoice_type_code__381
-msgid "Credit note"
+msgid "Credit Note"
 msgstr "Avoir"
 
 #. module: account_invoice_en16931
 #: model:ir.model,name:account_invoice_en16931.model_res_currency
 msgid "Currency"
 msgstr "Devise"
+
+#. module: account_invoice_en16931
+#: model:ir.model.fields,field_description:account_invoice_en16931.field_account_invoice_en16931_generate__move_ids
+msgid "Customer Invoices"
+msgstr "Factures client"
 
 #. module: account_invoice_en16931
 #. odoo-python
@@ -93,10 +161,21 @@ msgid "DRAFT-FOR_TEST_ONLY"
 msgstr "BROUILLON-TEST_UNIQUEMENT"
 
 #. module: account_invoice_en16931
+#: model:ir.model.fields,field_description:account_invoice_en16931.field_res_company__en16931_default_pdf_invoice
+#: model:ir.model.fields,field_description:account_invoice_en16931.field_res_config_settings__en16931_default_pdf_invoice
+msgid "Default PDF Invoice Generation"
+msgstr "Génération de facture PDF par défaut"
+
+#. module: account_invoice_en16931
+#: model:ir.model.fields,field_description:account_invoice_en16931.field_account_invoice_en16931_generate__display_name
+msgid "Display Name"
+msgstr "Nom affiché"
+
+#. module: account_invoice_en16931
 #. odoo-python
-#: code:addons/account_invoice_en16931/models/res_company.py:0
-msgid "Discount decimal precision is %s. For EN16931, the maximum value is 2."
-msgstr "La précision décimale de la remise est %s. Pour EN16931, la précision maximale est de 2."
+#: code:addons/account_invoice_en16931/models/account_move.py:0
+msgid "Draft Invoice"
+msgstr "Facture brouillon"
 
 #. module: account_invoice_en16931
 #. odoo-python
@@ -105,8 +184,8 @@ msgid ""
 "EN16931 generation is only for customer invoices and refunds. It is not the "
 "case of '%s'."
 msgstr ""
-"La génération EN16931 n'est utilisée que pour les factures et avoirs clients. "
-"Ce n'est pas le cas de '%s'."
+"La génération EN16931 n'est utilisée que pour les factures et avoirs "
+"clients. Ce n'est pas le cas de '%s'."
 
 #. module: account_invoice_en16931
 #. odoo-python
@@ -115,8 +194,8 @@ msgid ""
 "EN16931 generation is only for draft and posted invoices. It is not the case"
 " of '%s'."
 msgstr ""
-"La génération EN16931 n'est utilisée que pour les factures en Brouillon ou Comptabilisées. "
-"Ce n'est pas le cas de '%s'."
+"La génération EN16931 n'est prévue que pour les factures brouillon ou "
+"comptabilisées. Ce n'est pas le cas de '%s'."
 
 #. module: account_invoice_en16931
 #. odoo-python
@@ -130,24 +209,32 @@ msgstr ""
 
 #. module: account_invoice_en16931
 #: model:ir.model.fields.selection,name:account_invoice_en16931.selection__account_move__invoice_type_code__472
-msgid "Factored Corrective Invoice, invoice type, Corrected"
-msgstr "Facture corrective affacturée, type facture, Corrective"
+msgid "Factored Corrective Invoice"
+msgstr "Facture rectificative affacturée"
 
 #. module: account_invoice_en16931
 #: model:ir.model.fields.selection,name:account_invoice_en16931.selection__account_move__invoice_type_code__396
-msgid "Factored credit note"
+msgid "Factored Credit Note"
 msgstr "Avoir affacturé"
 
 #. module: account_invoice_en16931
 #: model:ir.model.fields.selection,name:account_invoice_en16931.selection__account_move__invoice_type_code__393
-msgid "Factored invoice"
+msgid "Factored Invoice"
 msgstr "Facture affacturée"
 
 #. module: account_invoice_en16931
 #. odoo-python
 #: code:addons/account_invoice_en16931/models/account_move.py:0
+#: model:ir.model.fields.selection,name:account_invoice_en16931.selection__account_invoice_en16931_generate__invoice_format__facturx
+#: model:ir.model.fields.selection,name:account_invoice_en16931.selection__res_company__en16931_default_pdf_invoice__facturx
 msgid "Factur-X"
 msgstr ""
+
+#. module: account_invoice_en16931
+#: model:ir.model.fields.selection,name:account_invoice_en16931.selection__account_invoice_en16931_generate__invoice_format__facturx_ubl
+#: model:ir.model.fields.selection,name:account_invoice_en16931.selection__res_company__en16931_default_pdf_invoice__facturx_ubl
+msgid "Factur-X with additional UBL XML attachment"
+msgstr "Factur-X avec pièce jointe additionnelle en UBL XML"
 
 #. module: account_invoice_en16931
 #. odoo-python
@@ -162,32 +249,103 @@ msgstr ""
 #. module: account_invoice_en16931
 #. odoo-python
 #: code:addons/account_invoice_en16931/models/account_move.py:0
-msgid "Failed to generate the Factur-X XML file. Error: %s"
-msgstr "Erreur de génération du fichier XML Factur-X. Erreur : %s"
+msgid ""
+"Failed to generate the %(flavor)s XML file with profile %(level)s. Error: "
+"%(err)s"
+msgstr ""
+"La génération du fichier XML %(flavor)s avec le profil %(level)s a échouée. "
+"Erreur: %(err)s"
+
+#. module: account_invoice_en16931
+#. odoo-python
+#: code:addons/account_invoice_en16931/models/account_move.py:0
+msgid ""
+"Failed to generate the UBL-2.1 XML file with profile 'extended-ctc-fr'. "
+"Error: %(err)s"
+msgstr ""
+"Échec lors de la génération du fichier XML UBL-2.1 avec le profil 'extended-"
+"ctc-fr'. Erreur : %(err)s"
+
+#. module: account_invoice_en16931
+#. odoo-python
+#: code:addons/account_invoice_en16931/models/account_move.py:0
+msgid ""
+"Field 'Invoice Type Code' is required on customer invoices/refunds, but it "
+"is not set on '%s'."
+msgstr ""
+"Le champ 'Code du type de facture' est obligatoire sur les factures/avoirs "
+"client, mais il n'est pas renseigné sur '%s'."
+
+#. module: account_invoice_en16931
+#: model:ir.model.fields,field_description:account_invoice_en16931.field_account_invoice_en16931_generate__file_data
+msgid "File Data"
+msgstr "Données du fichier"
+
+#. module: account_invoice_en16931
+#: model:ir.model.fields,field_description:account_invoice_en16931.field_account_invoice_en16931_generate__filename
+msgid "Filename"
+msgstr "Nom du fichier"
+
+#. module: account_invoice_en16931
+#: model_terms:ir.ui.view,arch_db:account_invoice_en16931.account_invoice_en16931_form
+msgid "Generate"
+msgstr "Générer"
+
+#. module: account_invoice_en16931
+#: model:ir.actions.act_window,name:account_invoice_en16931.account_invoice_en16931_action
+msgid "Generate eInvoices"
+msgstr "Générer les factures électroniques"
+
+#. module: account_invoice_en16931
+#: model:ir.model.fields,field_description:account_invoice_en16931.field_account_invoice_en16931_generate__id
+msgid "ID"
+msgstr ""
 
 #. module: account_invoice_en16931
 #: model_terms:ir.ui.view,arch_db:account_invoice_en16931.res_config_settings_view_form
 msgid ""
-"For Factur-X, the official schematron file depends on an external CodeDB XML"
-" file, but Saxon Server is not designed to receive this external CodeDB XML "
-"file in the HTTP schematron validation request. By default, Odoo replaces "
-"the external CodeDB XML files by a public URL, but it adds extra latency in "
-"the schematron validation to retrieve the CodeDB file. To avoid that, you "
-"can put the CodeDB XML files in a dedicated directory on the Saxon Server "
-"and specifiy the directory in the parameter below."
+"If this option is enabled, an error will be raised if the Saxon server is "
+"down, unreachable or experience a technical failure during schematron "
+"validation."
 msgstr ""
-"Pour Factur-X, le fichier schematron officiel dépend d'un fichier XML CodeDB "
-"externe, mais le serveur Saxon ne peut pas recevoir ce fichier lors de la "
-"requête HTTP de validation du schématron. Par défaut, Odoo remplace ce fichier "
-"par une URL pulique, ce qui ajoute de la latence sur la validation pour récupérer "
-"ce fichier. Pour éviter ce délai, vous pouvez placer les fichiers XML CodeDB "
-"dans un répertoire dédié du serveur Saxon et configurer ci-dessous ce répertoire."
+"Si cette option est activée, un message d'erreur bloquant sera affiché si le serveur Saxon "
+"est en panne, injoignable ou a un problème technique lors de la validation des schematrons."
 
 #. module: account_invoice_en16931
 #. odoo-python
 #: code:addons/account_invoice_en16931/models/account_move.py:0
 msgid "Invoice"
 msgstr "Facture"
+
+#. module: account_invoice_en16931
+#. odoo-python
+#: code:addons/account_invoice_en16931/models/account_move.py:0
+msgid ""
+"Invoice '%(invoice)s' has 2 e-invoice attachments with the same filename "
+"'%(filename)s'."
+msgstr ""
+"La facture '%(invoice)s' a 2 pièces jointes pour la facturation électronique"
+" avec le même nom de fichier '%(filename)s'."
+
+#. module: account_invoice_en16931
+#. odoo-python
+#: code:addons/account_invoice_en16931/models/account_move.py:0
+msgid ""
+"Invoice '%(move)s' has Invoice Type Code '%(type_code)s' which is for "
+"refunds."
+msgstr ""
+"La facture '%(move)s' a un code du type de facture '%(type_code)s' qui est "
+"dédié aux avoirs."
+
+#. module: account_invoice_en16931
+#: model:ir.model,name:account_invoice_en16931.model_account_invoice_en16931_generate
+msgid "Invoice EN16931 Generate"
+msgstr "Générer la facture EN16931"
+
+#. module: account_invoice_en16931
+#: model:ir.model.fields,field_description:account_invoice_en16931.field_account_invoice_en16931_generate__invoice_format
+msgid "Invoice Format"
+msgstr "Format de facture"
 
 #. module: account_invoice_en16931
 #: model:ir.model.fields,field_description:account_invoice_en16931.field_account_bank_statement_line__invoice_type_code
@@ -199,17 +357,25 @@ msgstr "Code du type de facture"
 #. odoo-python
 #: code:addons/account_invoice_en16931/models/account_move.py:0
 msgid ""
-"Invoice line '%(inv_line)s' has several VAT taxes (%(vat_taxes)s). EN-16931 "
+"Invoice line '%(inv_line)s' has several VAT taxes (%(vat_taxes)s). EN16931 "
 "only allows one VAT tax."
 msgstr ""
-"La ligne de facture '%(inv_line)s' a plusieurs TVA (%(vat_taxes)s). EN-16931 "
-"n'autorise qu'une seule TVA."
+"La ligne de facture '%(inv_line)s' a plusieurs taxes de TVA (%(vat_taxes)s)."
+" La norme EN16931 n'autorise qu'une seule taxe de TVA."
 
 #. module: account_invoice_en16931
 #. odoo-python
 #: code:addons/account_invoice_en16931/models/account_move.py:0
 msgid "Invoice line '%(inv_line)s' has tax '%(tax)s' which is not active."
-msgstr "La ligne de facture '%(inv_line)s' utilise la taxe '%(tax)s' qui est archivée."
+msgstr ""
+"La ligne de facture '%(inv_line)s' utilise la taxe '%(tax)s' qui est "
+"archivée."
+
+#. module: account_invoice_en16931
+#. odoo-python
+#: code:addons/account_invoice_en16931/wizards/account_invoice_en16931_generate.py:0
+msgid "Invoice(s)"
+msgstr "Facture(s)"
 
 #. module: account_invoice_en16931
 #: model:ir.model,name:account_invoice_en16931.model_account_move
@@ -222,10 +388,32 @@ msgid "Journal Item"
 msgstr "Écriture comptable"
 
 #. module: account_invoice_en16931
+#: model:ir.model.fields,field_description:account_invoice_en16931.field_account_invoice_en16931_generate__write_uid
+msgid "Last Updated by"
+msgstr "Dernière mise à jour par"
+
+#. module: account_invoice_en16931
+#: model:ir.model.fields,field_description:account_invoice_en16931.field_account_invoice_en16931_generate__write_date
+msgid "Last Updated on"
+msgstr "Dernière mise à jour le"
+
+#. module: account_invoice_en16931
 #. odoo-python
 #: code:addons/account_invoice_en16931/models/account_move.py:0
 msgid "Missing invoice line label."
 msgstr "Description de ligne de facture manquante."
+
+#. module: account_invoice_en16931
+#: model:ir.model.fields.selection,name:account_invoice_en16931.selection__account_invoice_en16931_generate__type__multi
+msgid "Multi"
+msgstr ""
+
+#. module: account_invoice_en16931
+#. odoo-python
+#: code:addons/account_invoice_en16931/wizards/account_invoice_en16931_generate.py:0
+msgid "No customer invoice/refund in draft or posted state selected."
+msgstr ""
+"Aucune facture/avoir client en brouillon ou comptabilisée sélectionnée."
 
 #. module: account_invoice_en16931
 #. odoo-python
@@ -234,24 +422,32 @@ msgid ""
 "On invoice '%(inv)s', invoice line '%(inv_line)s' should have exactly one "
 "VAT tax and not %(count)s."
 msgstr ""
-"Sur la facture '%(inv)s', la ligne '%(inv_line)s' doit avoir une et une seule TVA "
-"et pas %(count)s."
+"Sur la facture '%(inv)s', la ligne '%(inv_line)s' doit avoir une et une "
+"seule taxe de TVA et pas %(count)s."
+
+#. module: account_invoice_en16931
+#: model:ir.model.fields.selection,name:account_invoice_en16931.selection__account_invoice_en16931_generate__invoice_format__pdf_ubl
+#: model:ir.model.fields.selection,name:account_invoice_en16931.selection__res_company__en16931_default_pdf_invoice__pdf_ubl
+msgid "PDF invoice with UBL XML attachment"
+msgstr "Facture PDF avec UBL XML en pièce jointe"
 
 #. module: account_invoice_en16931
 #: model:ir.model.fields.selection,name:account_invoice_en16931.selection__account_move__invoice_type_code__503
-msgid "Prepayment credit note, credit note type, Corrected"
-msgstr "Avoir en prépaiement, type avoir, Corrective"
+msgid "Prepayment Credit Note"
+msgstr "Avoir d'acompte"
 
 #. module: account_invoice_en16931
 #: model:ir.model.fields.selection,name:account_invoice_en16931.selection__account_move__invoice_type_code__386
-msgid "Prepayment invoice"
-msgstr "Facture en prépaiement"
+msgid "Prepayment Invoice"
+msgstr "Facture d'acompte"
 
 #. module: account_invoice_en16931
 #. odoo-python
 #: code:addons/account_invoice_en16931/models/res_company.py:0
 msgid "Price decimal precision is %s. For EN16931, the maximum value is 4."
-msgstr "La précision décimale du prix est de %s. Pour EN16931, la valeur maximale est de 4."
+msgstr ""
+"La précision décimale des prix est de %s. Pour EN16931, la valeur maximale "
+"est de 4."
 
 #. module: account_invoice_en16931
 #. odoo-python
@@ -260,8 +456,13 @@ msgid ""
 "Product Unit of Measure decimal precision is %s. For EN16931, the maximum "
 "value is 4."
 msgstr ""
-"La précision décimale de l'unité de mesure du produit est de %s. Pour EN16931, "
-"la valeur maximale est de 4."
+"La précision décimale de l'unité de mesure du produit est de %s. Pour "
+"EN16931, la valeur maximale est de 4."
+
+#. module: account_invoice_en16931
+#: model:ir.model.fields,field_description:account_invoice_en16931.field_res_config_settings__saxon_validation_blocking
+msgid "Raise Error if Saxon Validation Fails"
+msgstr "Erreur bloquante si la validation Saxon échoue"
 
 #. module: account_invoice_en16931
 #. odoo-python
@@ -270,54 +471,89 @@ msgid "Refund"
 msgstr "Avoir"
 
 #. module: account_invoice_en16931
+#. odoo-python
+#: code:addons/account_invoice_en16931/models/account_move.py:0
+msgid ""
+"Refund '%(move)s' has Invoice Type Code '%(type_code)s' which is for "
+"invoices."
+msgstr ""
+"L'avoir '%(move)s' a un code du type de facture '%(type_code)s' qui est pour"
+" les factures."
+
+#. module: account_invoice_en16931
+#: model:ir.model.fields.selection,name:account_invoice_en16931.selection__res_company__en16931_default_pdf_invoice__none
+msgid "Regular PDF invoice"
+msgstr "Facture PDF simple"
+
+#. module: account_invoice_en16931
 #: model:ir.model,name:account_invoice_en16931.model_ir_actions_report
 msgid "Report Action"
 msgstr "Action de rapport"
 
 #. module: account_invoice_en16931
-#: model:ir.model.fields,field_description:account_invoice_en16931.field_res_config_settings__saxon_server_codedb_dir
-msgid "Saxon Server CodeDB Directory"
-msgstr "Répertoire du CodeDB sur serveur Saxon"
-
-#. module: account_invoice_en16931
-#: model:ir.model.fields.selection,name:account_invoice_en16931.selection__account_move__invoice_type_code__500
-msgid "Self Prepayment invoice, invoice type, Original"
-msgstr "Auto-facture en prépaiement, type facture, Originale"
-
-#. module: account_invoice_en16931
-#: model:ir.model.fields.selection,name:account_invoice_en16931.selection__account_move__invoice_type_code__473
-msgid "Self billed Factored corrective invoice, invoice type, Corrected"
-msgstr "Auto-facture corrective affacturée, type facture, Corrective"
+#: model:ir.model.fields.selection,name:account_invoice_en16931.selection__account_move__invoice_type_code__471
+msgid "Self-billed Corrective Invoice"
+msgstr "Facture rectificative en auto-facturation"
 
 #. module: account_invoice_en16931
 #: model:ir.model.fields.selection,name:account_invoice_en16931.selection__account_move__invoice_type_code__261
-msgid "Self billed credit note"
-msgstr "Auto-avoir"
+msgid "Self-billed Credit Note"
+msgstr "Avoir en auto-facturation"
 
 #. module: account_invoice_en16931
-#: model:ir.model.fields.selection,name:account_invoice_en16931.selection__account_move__invoice_type_code__501
-msgid "Self billed factored invoice, invoice type, Original"
-msgstr "Auto-facture affacturée, type facture, Originale"
+#: model:ir.model.fields.selection,name:account_invoice_en16931.selection__account_move__invoice_type_code__473
+msgid "Self-billed Factored Corrective Invoice"
+msgstr "Facture rectificative affacturée en auto-facturation"
 
 #. module: account_invoice_en16931
 #: model:ir.model.fields.selection,name:account_invoice_en16931.selection__account_move__invoice_type_code__502
-msgid "Self billet factored Credit Note, Credit note type, Corrected"
-msgstr "Auto-avoir affacturé, type avoir, Corrective"
+msgid "Self-billed Factored Credit Note"
+msgstr "Avoir affacturé en auto-facturation"
 
 #. module: account_invoice_en16931
-#: model:ir.model.fields.selection,name:account_invoice_en16931.selection__account_move__invoice_type_code__471
-msgid "Self-billed corrective invoice, invoice type, Corrected"
-msgstr "Auto-facture corrective, type facture, Corrective"
+#: model:ir.model.fields.selection,name:account_invoice_en16931.selection__account_move__invoice_type_code__501
+msgid "Self-billed Factored Invoice"
+msgstr "Facture affacturée en auto-facturation"
 
 #. module: account_invoice_en16931
 #: model:ir.model.fields.selection,name:account_invoice_en16931.selection__account_move__invoice_type_code__389
-msgid "Self-billed invoice"
-msgstr "Auto-facture"
+msgid "Self-billed Invoice"
+msgstr "Facture en auto-facturation"
+
+#. module: account_invoice_en16931
+#: model:ir.model.fields.selection,name:account_invoice_en16931.selection__account_move__invoice_type_code__500
+msgid "Self-billed Prepayment Invoice"
+msgstr "Facture d'acompte en auto-facturation"
+
+#. module: account_invoice_en16931
+#: model:ir.model.fields.selection,name:account_invoice_en16931.selection__account_invoice_en16931_generate__type__single
+msgid "Single"
+msgstr "Unique"
 
 #. module: account_invoice_en16931
 #: model:ir.model.fields,field_description:account_invoice_en16931.field_res_config_settings__saxon_server_url
 msgid "Specific Saxon Server URL"
-msgstr "URL du serveur Saxon spécifique"
+msgstr "URL spécifique du serveur Saxon"
+
+#. module: account_invoice_en16931
+#: model:ir.model.fields.selection,name:account_invoice_en16931.selection__account_invoice_en16931_generate__archive_format__tar
+msgid "Tar (no compression)"
+msgstr "Tar (sans compression)"
+
+#. module: account_invoice_en16931
+#: model:ir.model.fields.selection,name:account_invoice_en16931.selection__account_invoice_en16931_generate__archive_format__tar_bz2
+msgid "Tar BZ2"
+msgstr ""
+
+#. module: account_invoice_en16931
+#: model:ir.model.fields.selection,name:account_invoice_en16931.selection__account_invoice_en16931_generate__archive_format__tar_gz
+msgid "Tar GZ"
+msgstr ""
+
+#. module: account_invoice_en16931
+#: model:ir.model.fields.selection,name:account_invoice_en16931.selection__account_invoice_en16931_generate__archive_format__tar_xz
+msgid "Tar XZ"
+msgstr ""
 
 #. module: account_invoice_en16931
 #: model:ir.model,name:account_invoice_en16931.model_account_tax
@@ -332,7 +568,7 @@ msgid ""
 "community implementation of EN16931 for the moment."
 msgstr ""
 "La taxe '%(tax)s' a un taux négatif (%(rate)s). Cela n'est pas autorisé par "
-"l'implémentation communautaire de EN16931, pour le moment."
+"l'implémentation communautaire de EN16931 pour le moment."
 
 #. module: account_invoice_en16931
 #. odoo-python
@@ -342,15 +578,15 @@ msgid ""
 " Base of Subsequent Taxes'. This is not supported by the community "
 "implementation of EN16931 for the moment."
 msgstr ""
-"La taxe '%(tax)s' n'est pas une TVA et n'est pas configurée avec l'option 'Impacter "
-" la base des taxes ultérieures'. Cela n'est pas autorisé par l'implémentation "
-"communautaire de EN16931, pour le moment."
+"La taxe '%(tax)s' n'est pas une taxe de TVA et n'est pas configurée avec "
+"l'option 'Impacter la base des taxes ultérieures'. Cela n'est pas autorisé "
+"par l'implémentation communautaire de EN16931 pour le moment."
 
 #. module: account_invoice_en16931
 #. odoo-python
 #: code:addons/account_invoice_en16931/models/account_tax.py:0
 msgid "Tax '%s' has no UNECE Tax Type."
-msgstr "La taxe '%s' n'a pas de type de taxe UNECE."
+msgstr "La taxe '%s' n'a pas de type UNECE."
 
 #. module: account_invoice_en16931
 #: model_terms:ir.ui.view,arch_db:account_invoice_en16931.res_config_settings_view_form
@@ -360,10 +596,10 @@ msgid ""
 "(because the company is not a VAT-registrered company for example) and you "
 "must set the VAT exemption reason below."
 msgstr ""
-"La société active n'a pas de TVA active. Soit c'est une erreur et il faudrait "
-"mettre à jour la configuration des taxes. Ou c'est attendu (car la société n'est "
-"pas assujettie par exemple) et il vous faut alors configurer la cause d'exemption "
-"de TVA ci-dessous."
+"La société actuelle n'a aucune taxe de TVA active. Soit c'est une erreur et "
+"il faudrait mettre à jour la configuration des taxes. Ou c'est normal (car "
+"la société n'est pas assujettie à la TVA par exemple) et il vous faut alors "
+"configurer le motif d'exonération de TVA ci-dessous."
 
 #. module: account_invoice_en16931
 #: model_terms:ir.ui.view,arch_db:account_invoice_en16931.res_config_settings_view_form
@@ -373,8 +609,8 @@ msgid ""
 "enter it below."
 msgstr ""
 "La valeur par défaut pour l'URL du serveur Saxon est "
-"http://localhost:5000/transform Si vous voulez utiliser une URL différente, vous "
-"pouvez la configurer ci-dessous."
+"http://localhost:5000/transform Si vous devez utiliser une URL différente, "
+"vous pouvez la configurer ci-dessous."
 
 #. module: account_invoice_en16931
 #. odoo-python
@@ -383,21 +619,21 @@ msgid ""
 "The following errors have been detected in company %(company)s that block EN16931 e-invoicing:\n"
 "%(err_msg)s"
 msgstr ""
-"Les erreurs suivantes ont été détectés sur la société %(company)s qui bloquent la facturation "
-"électronique EN16931 :\n"
+"Les erreurs suivantes ont été détectées sur la société %(company)s qui bloquent la facturation électronique EN16931 :\n"
 "%(err_msg)s"
 
 #. module: account_invoice_en16931
 #. odoo-python
 #: code:addons/account_invoice_en16931/models/account_move.py:0
 msgid ""
-"There is no VAT tax on invoice line '%(inv_line)s' of invoice '%(invoice)s'."
+"There is no VAT tax on invoice line '%(inv_line)s'."
 " You must set a VAT tax on each invoice line in company '%(company)s' "
 "because it is a VAT-registered company."
 msgstr ""
-"Il n'y a pas de TVA sur la ligne '%(inv_line)s' de la facture '%(invoice)s'. "
-"Il est obligatoire de configurer une TVA sur chaque ligne de facture pour la société '%(company)s' "
-"car elle est assujettie à la TVA."
+"Il n'y a pas de taxe de TVA sur la ligne '%(inv_line)s'."
+" Il est obligatoire de configurer une taxe de TVA sur chaque "
+"ligne de facture pour la société '%(company)s' car elle est assujettie à la "
+"TVA."
 
 #. module: account_invoice_en16931
 #. odoo-python
@@ -406,14 +642,29 @@ msgid ""
 "Total Untaxed Amount (%(amount_untaxed)s) is negative. This is not supported"
 " by the EN16931 standard."
 msgstr ""
-"Le montant total HT (%(amount_untaxed)s) est négatif. Cela n'est pas autorisé "
-"par la norme EN16931."
+"Le total HT (%(amount_untaxed)s) est négatif. Cela n'est pas autorisé par la"
+" norme EN16931."
+
+#. module: account_invoice_en16931
+#: model:ir.model.fields,field_description:account_invoice_en16931.field_account_invoice_en16931_generate__type
+msgid "Type"
+msgstr ""
+
+#. module: account_invoice_en16931
+#: model:ir.model.fields.selection,name:account_invoice_en16931.selection__account_invoice_en16931_generate__invoice_format__ubl
+msgid "UBL XML"
+msgstr "XML UBL"
+
+#. module: account_invoice_en16931
+#: model:ir.model.fields.selection,name:account_invoice_en16931.selection__account_invoice_en16931_generate__invoice_format__ubl_pdf
+msgid "UBL XML with embedded PDF file"
+msgstr "XML UBL avec fichier PDF embarqué"
 
 #. module: account_invoice_en16931
 #. odoo-python
 #: code:addons/account_invoice_en16931/models/account_move_line.py:0
 msgid "UNECE code is not configured on unit of measure '%s'."
-msgstr "Le code UNECE n'est pas configuré pour l'unité de mesure '%s'."
+msgstr "Le code UNECE n'est pas configuré sur l'unité de mesure '%s'."
 
 #. module: account_invoice_en16931
 #. odoo-python
@@ -422,8 +673,9 @@ msgid ""
 "VAT tax '%(tax)s' has Tax Computation set to '%(amount_type)s', but all VAT "
 "taxes should have Tax Computation set to 'Percentage'."
 msgstr ""
-"La TVA '%(tax)s' a son Calcul de taxe configuré comme '%(amount_type)s', quand toutes "
-"les TVA doivent être configurées pour un calcul en 'Pourcentage'."
+"La taxe de TVA '%(tax)s' a le champ 'Calcul de la taxe' configuré sur "
+"'%(amount_type)s', mais toutes les taxes de TVA doivent être configurées sur"
+" 'Pourcentage'."
 
 #. module: account_invoice_en16931
 #. odoo-python
@@ -432,8 +684,8 @@ msgid ""
 "VAT tax '%(tax)s' has UNECE Tax Category '%(categ)s' so it should have a VAT"
 " Exemption Reason."
 msgstr ""
-"La TVA '%(tax)s' a pour catégorie de taxe UNECE '%(categ)s', et devrait donc être "
-"configurée avec une cause d'exemption de TVA."
+"La taxe de TVA '%(tax)s' a pour catégorie UNECE '%(categ)s', et devrait donc"
+" être configurée avec un motif d'exonération de TVA."
 
 #. module: account_invoice_en16931
 #. odoo-python
@@ -442,8 +694,8 @@ msgid ""
 "VAT tax '%(tax)s' has UNECE Tax Category '%(categ)s' so it should not have a"
 " VAT Exemption Reason."
 msgstr ""
-"La TVA '%(tax)s' a pour catégorie de taxe UNECE '%(categ)s', et ne devrait donc pas "
-"être configurée avec une cause d'exemption de TVA."
+"La taxe de TVA '%(tax)s' a pour catégorie UNECE '%(categ)s', et ne devrait "
+"donc pas être configurée avec un motif d'exonération de TVA."
 
 #. module: account_invoice_en16931
 #. odoo-python
@@ -452,7 +704,7 @@ msgid ""
 "VAT tax '%(tax)s' has UNECE Tax Category '%(categ)s' so it's rate (%(rate)s)"
 " should be null."
 msgstr ""
-"La TVA '%(tax)s' a pour catégorie de taxe UNECE '%(categ)s', donc son taux "
+"La taxe de TVA '%(tax)s' a pour catégorie UNECE '%(categ)s', donc son taux "
 "devrait être nul."
 
 #. module: account_invoice_en16931
@@ -461,8 +713,8 @@ msgstr ""
 msgid ""
 "VAT tax '%(tax)s' has UNECE Tax Category '%(categ)s' so it's rate (%(rate)s)"
 " should be strictly positive."
-msgstr "" 
-"La TVA '%(tax)s' a pour catégorie de taxe UNECE '%(categ)s', donc son taux "
+msgstr ""
+"La taxe de TVA '%(tax)s' a pour catégorie UNECE '%(categ)s', donc son taux "
 "devrait être strictement positif."
 
 #. module: account_invoice_en16931
@@ -472,22 +724,82 @@ msgid ""
 "VAT tax '%(tax)s' has a rate of %(rate)s %%, which is above the known "
 "maximum VAT rate in the world. There is certainly a mistake in the rate."
 msgstr ""
-"La TVA '%(tax)s' a un taux de %(rate)s %%, qui est au-dessus du plus haut "
-"taux de TVA connu. Le taux est très probablement incorrectement configuré."
+"La taxe de TVA '%(tax)s' a un taux de %(rate)s %%, qui est au-dessus du plus"
+" haut taux de TVA connu. Le taux est très probablement incorrectement "
+"configuré."
 
 #. module: account_invoice_en16931
 #. odoo-python
 #: code:addons/account_invoice_en16931/models/account_tax.py:0
 msgid "VAT tax '%s' has no UNECE Tax Category."
-msgstr "La TVA '%s' n'a pas de catégorie de taxe UNECE"
+msgstr "La taxe de TVA '%s' n'a pas de catégorie UNECE."
 
 #. module: account_invoice_en16931
-#: model_terms:ir.ui.view,arch_db:account_invoice_en16931.res_config_settings_view_form
-msgid "eInvoicing"
+#. odoo-python
+#: code:addons/account_invoice_en16931/models/account_move.py:0
+msgid ""
+"You cannot add an e-invoice attachment with filename '%s' because this "
+"filename is reserved."
+msgstr ""
+"Vous ne pouvez pas ajouter une pièce jointe pour la facturation électronique"
+" avec le nom de fichier '%s' car ce nom de fichier est réservé."
+
+#. module: account_invoice_en16931
+#. odoo-python
+#: code:addons/account_invoice_en16931/models/account_move.py:0
+msgid ""
+"You cannot add e-invoice attachment '%(filename)s' whose MIME type is "
+"'%(mimetype)s'. Allowed MIME types for e-invoice attachments are: "
+"%(allowed_mimetypes)s."
+msgstr ""
+"Vous ne pouvez pas ajouter une pièce jointe pour la facturation électronique"
+" '%(filename)s' dont le type MIME est '%(mimetype)s'. Les types MIME "
+"autorisés pour les pièces jointes pour la facturation électronique sont : "
+"%(allowed_mimetypes)s."
+
+#. module: account_invoice_en16931
+#. odoo-python
+#: code:addons/account_invoice_en16931/wizards/account_invoice_en16931_generate.py:0
+msgid "You must select an archive format."
+msgstr "Vous devez sélectionner un format d'archive."
+
+#. module: account_invoice_en16931
+#. odoo-python
+#: code:addons/account_invoice_en16931/wizards/account_invoice_en16931_generate.py:0
+msgid "You must select at least one customer invoice/refund."
+msgstr "Vous devez sélectionner au moins une facture/avoir client."
+
+#. module: account_invoice_en16931
+#: model:ir.model.fields.selection,name:account_invoice_en16931.selection__account_invoice_en16931_generate__archive_format__zip
+msgid "ZIP"
 msgstr ""
 
 #. module: account_invoice_en16931
 #. odoo-python
 #: code:addons/account_invoice_en16931/models/account_move.py:0
+msgid "draft_invoice"
+msgstr "facture_brouillon"
+
+#. module: account_invoice_en16931
+#: model_terms:ir.ui.view,arch_db:account_invoice_en16931.view_move_form
+msgid "eInvoice"
+msgstr "Facture électronique"
+
+#. module: account_invoice_en16931
+#: model:ir.model.fields,field_description:account_invoice_en16931.field_account_bank_statement_line__invoice_attachment_ids
+#: model:ir.model.fields,field_description:account_invoice_en16931.field_account_move__invoice_attachment_ids
+msgid "eInvoice Attachments"
+msgstr "Pièces jointes pour la facturation électronique"
+
+#. module: account_invoice_en16931
+#: model_terms:ir.ui.view,arch_db:account_invoice_en16931.res_config_settings_view_form
+#: model_terms:ir.ui.view,arch_db:account_invoice_en16931.view_move_form
+msgid "eInvoicing"
+msgstr "Facturation électronique"
+
+#. module: account_invoice_en16931
+#. odoo-python
+#: code:addons/account_invoice_en16931/models/account_move.py:0
 msgid "{company_name}: {invoice_type} {invoice_number} dated {invoice_date}"
-msgstr "{company_name}: {invoice_type} {invoice_number} datée du {invoice_date}"
+msgstr ""
+"{company_name}: {invoice_type} {invoice_number} datée du {invoice_date}"
