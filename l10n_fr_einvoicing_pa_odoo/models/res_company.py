@@ -47,19 +47,29 @@ class ResCompany(models.Model):
         "by the native French e-invoicing module. The directory lookups keep "
         "using the accredited platform selected above and its credentials.",
     )
-    # Upstream fetches the readable view of a vendor bill from SUPER PDP, which
-    # never sees the flows of a company on the Odoo platform.
-    fr_ctc_auto_download_readable_invoice = fields.Boolean(
-        compute="_compute_fr_ctc_auto_download_readable_invoice",
-        store=True,
-        readonly=False,
-    )
 
-    @api.depends("fr_ctc_transport_odoo")
-    def _compute_fr_ctc_auto_download_readable_invoice(self):
-        for company in self:
-            if company.fr_ctc_transport_odoo:
-                company.fr_ctc_auto_download_readable_invoice = False
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            if vals.get("fr_ctc_transport_odoo"):
+                vals.update(self._fr_ctc_odoo_transport_vals())
+        return super().create(vals_list)
+
+    def write(self, vals):
+        if vals.get("fr_ctc_transport_odoo"):
+            vals = dict(vals, **self._fr_ctc_odoo_transport_vals())
+        return super().write(vals)
+
+    @api.model
+    def _fr_ctc_odoo_transport_vals(self):
+        """Return what checking the setting turns off along with it.
+
+        Upstream downloads the readable view of a vendor bill from SUPER PDP,
+        which never sees the flows of a company on the Odoo platform. Written
+        rather than computed: the upstream default would win over a compute
+        on a company created with the setting already checked.
+        """
+        return {"fr_ctc_auto_download_readable_invoice": False}
 
     @api.depends("fr_ctc_transport_odoo")
     def _compute_l10n_fr_f10_enable_reporting(self):

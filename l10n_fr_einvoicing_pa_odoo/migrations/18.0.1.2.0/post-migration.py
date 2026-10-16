@@ -6,20 +6,17 @@ from odoo import SUPERUSER_ID, api
 
 
 def migrate(cr, version):
-    """Apply the new computes to the companies already on the bridge.
+    """Bring the companies already on the bridge in line with the setting.
 
-    An update does not recompute the existing rows of a field that gains a
-    compute or a dependency: without this, a company on the bridge would keep
-    the native e-reporting on, and the readable view download, until its
-    setting is touched again.
+    An update does not recompute the existing rows of a field whose compute
+    gains a dependency, and does not replay a write: without this, a company
+    on the bridge would keep the native e-reporting on, and the readable view
+    download from SUPER PDP, until its setting is touched again.
     """
     if not version:
         return
     env = api.Environment(cr, SUPERUSER_ID, {})
     companies = env["res.company"].search([("fr_ctc_transport_odoo", "=", True)])
-    for fname in (
-        "fr_ctc_auto_download_readable_invoice",
-        "l10n_fr_f10_enable_reporting",
-    ):
-        env.add_to_compute(companies._fields[fname], companies)
+    companies.write(companies._fr_ctc_odoo_transport_vals())
+    env.add_to_compute(companies._fields["l10n_fr_f10_enable_reporting"], companies)
     env.flush_all()

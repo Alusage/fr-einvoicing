@@ -376,7 +376,12 @@ class TestPaOdoo(TransactionCase):
 
     def _only_our_company(self):
         flow_cls = type(self.env["fr.einvoicing.flow"])
-        return patch.object(flow_cls, "_cron_companies", lambda flow: self.company)
+        # Kept in the cron's environment, as upstream's search would be.
+        return patch.object(
+            flow_cls,
+            "_cron_companies",
+            lambda flow: self.company.with_env(flow.env),
+        )
 
     def test_out_cron_does_not_open_superpdp_session(self):
         flow = self._out_flow()
@@ -435,6 +440,8 @@ class TestPaOdoo(TransactionCase):
     def test_readable_view_not_fetched(self):
         self.assertFalse(self.company.fr_ctc_auto_download_readable_invoice)
         self.assertTrue(self.other_company.fr_ctc_auto_download_readable_invoice)
+        self.other_company.fr_ctc_transport_odoo = True
+        self.assertFalse(self.other_company.fr_ctc_auto_download_readable_invoice)
         move = self.env["account.move"].new({"company_id": self.company.id})
         with self.assertRaises(UserError):
             move.fr_ctc_get_readable_invoice_button()
