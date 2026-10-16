@@ -4,19 +4,22 @@
 
 {
     "name": "France eInvoicing - Odoo accredited platform",
-    "version": "18.0.1.0.0",
+    "version": "18.0.1.1.0",
     "category": "Accounting",
     "license": "AGPL-3",
     "summary": "Send and receive fr-einvoicing flows through the Odoo accredited platform",
     "author": "Alusage",
     "maintainers": ["njeudy"],
-    "website": "https://github.com/Alusage/fr-einvoicing",
+    "website": "https://github.com/akretion/fr-einvoicing",
     # The generation, the directory and the tracking models stay Akretion's;
-    # only the two network calls are routed to the native Odoo proxy, whose
+    # only the transport calls are routed to the native Odoo proxy, whose
     # registration and KYC stay l10n_fr_pdp's.
     "depends": [
         "l10n_fr_einvoicing",
         "l10n_fr_pdp",
+    ],
+    "data": [
+        "views/res_config_settings_views.xml",
     ],
     "installable": True,
 }

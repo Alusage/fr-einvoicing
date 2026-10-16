@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+  Copyright 2026 Alusage (https://alusage.fr/)
+  @author: Nicolas Jeudy <nicolas@alusage.fr>
+  License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+-->
+<odoo>
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field name="model">res.config.settings</field>
+        <field
+            name="inherit_id"
+            ref="l10n_fr_einvoicing.res_config_settings_view_form"
+        />
+        <field name="arch" type="xml">
+            <setting id="fr_ctc_accredited_platform" position="after">
+                <setting
+                    id="fr_ctc_transport_odoo"
+                    help="Flows travel through the Odoo accredited platform, the directory stays on the accredited platform selected above"
+                >
+                    <field name="fr_ctc_transport_odoo" />
+                </setting>
+            </setting>
+        </field>
+    </record>
+</odoo>

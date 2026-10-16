@@ -10,8 +10,6 @@ from odoo.exceptions import UserError
 
 logger = logging.getLogger(__name__)
 
-PLATFORM = "odoo"
-
 # What the platform calls an incoming document, and what Akretion calls the
 # matching flow. A lifecycle answer reaches us through the same channel as an
 # invoice, so the sorting cannot be skipped: an invoice goes to the OCA
@@ -38,6 +36,18 @@ SYNTAX_BY_DOCUMENT_TYPE = {
 class ResCompany(models.Model):
     _inherit = "res.company"
 
+    # The accredited platform setting keeps answering for the directory and
+    # every other lookup, which the Odoo platform does not offer. This one
+    # only moves the transport, so a company can stay on SUPER PDP for its
+    # directory lines while its flows travel through the Odoo platform.
+    fr_ctc_transport_odoo = fields.Boolean(
+        string="Send and receive through the Odoo accredited platform",
+        help="Send the outgoing flows, receive the incoming ones and read their "
+        "status through the Odoo accredited platform, with the registration made "
+        "by the native French e-invoicing module. The directory lookups keep "
+        "using the accredited platform selected above and its credentials.",
+    )
+
     def _fr_ctc_is_pa_odoo(self):
         """Return True when this company routes its flows through the Odoo PA.
 
@@ -46,26 +56,30 @@ class ResCompany(models.Model):
         on the Odoo PA, and companies using the native module on its own.
         """
         self.ensure_one()
-        return self.fr_ctc_accredited_platform == PLATFORM
+        return self.fr_ctc_transport_odoo
 
-    def _fr_ctc_get_session(self):
-        """Return the native proxy user instead of an OAuth session.
+    def _fr_ctc_get_transport_session(self):
+        """Return what the flows travel with: the native proxy user, if any.
 
-        The Odoo PA authenticates each request by signing it with the proxy
-        user's key, so there is no OAuth session to open and no client
-        credentials to read -- `_fr_ctc_credentials` would raise, since
-        `fr_ctc_auth_method` is empty for this platform. The proxy user plays
-        the part of the session for every network method of this module.
+        Upstream hands one session to everything, but here two platforms are
+        at play. `_fr_ctc_get_session` is left alone and keeps returning the
+        SUPER PDP session, because its other callers -- the directory sync,
+        the API test, the readable view -- query an API the Odoo platform
+        does not have. The transport methods of this module ask for this one
+        instead, whatever session their caller passed them.
+
+        The Odoo platform authenticates each request by signing it with the
+        proxy user's key, so there is no OAuth session to open here.
         """
         self.ensure_one()
         if not self._fr_ctc_is_pa_odoo():
-            return super()._fr_ctc_get_session()
+            return self._fr_ctc_get_session()
         edi_user = self.account_peppol_edi_user
         if not edi_user:
             raise UserError(
                 _(
-                    "Company '%s' is set to send through the Odoo accredited "
-                    "platform, but it is not registered on it yet.",
+                    "Company '%s' is set to send and receive through the Odoo "
+                    "accredited platform, but it is not registered on it yet.",
                     self.display_name,
                 )
             )
@@ -103,8 +117,9 @@ class ResCompany(models.Model):
             )
         log_obj = self.env["fr.einvoicing.log"]
         flow_obj = self.env["fr.einvoicing.flow"]
-        edi_user = session
         try:
+            # The session the caller passed is the SUPER PDP one.
+            edi_user = self._fr_ctc_get_transport_session()
             answer = edi_user._call_peppol_proxy(
                 edi_user._get_peppol_proxy_endpoint("1/get_all_documents"),
                 {
@@ -145,8 +160,8 @@ class ResCompany(models.Model):
             # -- carries a UUID the outgoing flow already holds. Skipping it as
             # a duplicate would drop the vendor bill, and it is exactly how the
             # reception gets tested on a single registered company.
-            self_addressed = (
-                message.get("sender") and message["sender"] == message.get("receiver")
+            self_addressed = message.get("sender") and message["sender"] == message.get(
+                "receiver"
             )
             if uuid in known and not self_addressed:
                 continue
@@ -158,7 +173,7 @@ class ResCompany(models.Model):
             result["new_count"] += len(flows)
         if download_and_process:
             for flow in flows:
-                flow._download(session, result)
+                flow._download(edi_user, result)
                 if flow.state == "downloaded":
                     # The acknowledgement is not sent from here: `_process`
                     # carries it, so that a flow retried by a later cron run

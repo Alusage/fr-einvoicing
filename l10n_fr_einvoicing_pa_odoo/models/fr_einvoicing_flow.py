@@ -9,10 +9,6 @@ from odoo import api, fields, models, tools
 
 logger = logging.getLogger(__name__)
 
-# Value of `fr_ctc_accredited_platform` this module answers for. Spelled out
-# here rather than imported from the company, so each file reads on its own.
-PLATFORM = "odoo"
-
 # The Odoo platform addresses a French party as "<EAS>:<endpoint>", where the
 # endpoint reads SIREN[_SIRET][_suffix] -- the very grammar of a directory
 # line's identifier, so it travels as it is.
@@ -47,24 +43,39 @@ class FrEinvoicingFlow(models.Model):
 
     @api.model
     def _cron_companies(self):
-        """Let a company reach the crons without an authentication method.
+        """Let a company on the Odoo platform reach the crons in any case.
 
-        Upstream requires one, which is right for the AFNOR API: without
-        OAuth credentials there is nothing to open a session with. The Odoo
-        platform signs each request with the proxy user's key instead, so a
-        company on it never has one -- and would silently be skipped by both
-        crons, neither sending nor importing anything.
+        Upstream skips a company without an authentication method, which is
+        right for the AFNOR API. Such a company still needs SUPER PDP
+        credentials here -- the crons open that session before anything else,
+        and the directory relies on it -- but skipping it silently would leave
+        its flows unsent with nothing to tell why. Kept in, it fails to get its
+        session and the cron log says so.
         """
         return super()._cron_companies() | (
             self.env["res.company"]
             .sudo()
             .search(
                 [
-                    ("fr_ctc_accredited_platform", "=", PLATFORM),
+                    ("fr_ctc_transport_odoo", "=", True),
                     ("partner_id.fr_directory_entity_type", "=", "private"),
                 ]
             )
         )
+
+    def _fr_ctc_odoo_session(self, result):
+        """Return the proxy user to talk to the Odoo platform, or log why not.
+
+        The session the transport methods receive is the SUPER PDP one, since
+        upstream opens a single session per company: the proxy user is fetched
+        here instead.
+        """
+        self.ensure_one()
+        try:
+            return self.company_id._fr_ctc_get_transport_session()
+        except Exception as err:
+            self.env["fr.einvoicing.log"]._error_log(result, str(err))
+            return False
 
     def _fr_ctc_odoo_receiver(self):
         """Return the "<EAS>:<endpoint>" the Odoo platform routes on.
@@ -148,9 +159,9 @@ class FrEinvoicingFlow(models.Model):
                 "platform has no address to route it to.",
             )
             return
-        # `session` is the native proxy user, as `_fr_ctc_get_session` returns
-        # it for this platform.
-        edi_user = session
+        edi_user = self._fr_ctc_odoo_session(result)
+        if not edi_user:
+            return
         try:
             res = edi_user._call_peppol_proxy(
                 edi_user._get_peppol_proxy_endpoint("1/send_document"),
@@ -187,7 +198,9 @@ class FrEinvoicingFlow(models.Model):
                 ),
             }
         )
-        log_obj._info_log(result, f"Flow {self.display_name} sent to the Odoo platform.")
+        log_obj._info_log(
+            result, f"Flow {self.display_name} sent to the Odoo platform."
+        )
         if "updated_count" in result:
             result["updated_count"] += 1
         if self.move_ids:
@@ -236,7 +249,9 @@ class FrEinvoicingFlow(models.Model):
                 result, f"Flow {self.display_name} has no identifier to download."
             )
             return
-        edi_user = session
+        edi_user = self._fr_ctc_odoo_session(result)
+        if not edi_user:
+            return
         try:
             answer = edi_user._call_peppol_proxy(
                 edi_user._get_peppol_proxy_endpoint("1/get_document"),
@@ -263,7 +278,7 @@ class FrEinvoicingFlow(models.Model):
         if "updated_count" in result:
             result["updated_count"] += 1
 
-    def _fr_ctc_odoo_ack(self, session, result):
+    def _fr_ctc_odoo_ack(self, result):
         """Tell the platform this message has been dealt with.
 
         An acknowledgement drops the message from the platform for good, so it
@@ -282,7 +297,9 @@ class FrEinvoicingFlow(models.Model):
         # tests, where a commit would break the enclosing case.
         if not tools.config.get("test_enable"):
             self.env.cr.commit()
-        edi_user = session
+        edi_user = self._fr_ctc_odoo_session(result)
+        if not edi_user:
+            return
         try:
             edi_user._call_peppol_proxy(
                 edi_user._get_peppol_proxy_endpoint("1/ack"),
@@ -312,7 +329,7 @@ class FrEinvoicingFlow(models.Model):
             and self.state == "done"
             and self.company_id._fr_ctc_is_pa_odoo()
         ):
-            self._fr_ctc_odoo_ack(self.company_id._fr_ctc_get_session(), result)
+            self._fr_ctc_odoo_ack(result)
         return res
 
     def _update_status(self, session, result):
@@ -334,7 +351,9 @@ class FrEinvoicingFlow(models.Model):
                 result, f"Flow {self.display_name} has no identifier to ask about."
             )
             return
-        edi_user = session
+        edi_user = self._fr_ctc_odoo_session(result)
+        if not edi_user:
+            return
         try:
             answer = edi_user._call_peppol_proxy(
                 edi_user._get_peppol_proxy_endpoint("1/get_document"),
@@ -353,13 +372,11 @@ class FrEinvoicingFlow(models.Model):
             if error.get("code") == MESSAGE_NOT_READY_CODE:
                 # Still travelling: ask again on the next run.
                 return
-            self.sudo().write(
-                {"state": "error", "ap_error_details": str(error)}
-            )
+            self.sudo().write({"state": "error", "ap_error_details": str(error)})
             log_obj._error_log(
                 result, f"The platform reports an error on flow {self.display_name}."
             )
-            self._fr_ctc_odoo_ack(session, result)
+            self._fr_ctc_odoo_ack(result)
             return
         state = FLOW_STATE_BY_MESSAGE_STATE.get(content.get("state"))
         if not state:
@@ -374,4 +391,4 @@ class FrEinvoicingFlow(models.Model):
         log_obj._info_log(result, f"Flow {self.display_name} is now {state}.")
         if "updated_count" in result:
             result["updated_count"] += 1
-        self._fr_ctc_odoo_ack(session, result)
+        self._fr_ctc_odoo_ack(result)

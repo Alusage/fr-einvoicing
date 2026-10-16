@@ -2,7 +2,7 @@
 # @author: Nicolas Jeudy <nicolas@alusage.fr>
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import models
+from odoo import api, models
 
 
 class AccountMove(models.Model):
@@ -25,3 +25,17 @@ class AccountMove(models.Model):
         for move in self:
             if move.company_id._fr_ctc_is_pa_odoo():
                 move.pdp_can_send_response = False
+
+    @api.depends("fr_einvoicing_flow_id")
+    def _compute_fr_einvoicing_show_readable_invoice_button(self):
+        """Hide the readable view of a vendor bill received from the Odoo PA.
+
+        Upstream fetches it from SUPER PDP, which never saw that flow: the
+        identifier is the Odoo platform's, so asking for it there can only
+        fail. The Odoo platform has no readable view to offer instead.
+        """
+        res = super()._compute_fr_einvoicing_show_readable_invoice_button()
+        for move in self:
+            if move.company_id._fr_ctc_is_pa_odoo():
+                move.fr_einvoicing_show_readable_invoice_button = False
+        return res
