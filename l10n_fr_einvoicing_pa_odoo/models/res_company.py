@@ -5,7 +5,7 @@
 import logging
 from datetime import timedelta
 
-from odoo import _, fields, models
+from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
 logger = logging.getLogger(__name__)
@@ -36,10 +36,10 @@ SYNTAX_BY_DOCUMENT_TYPE = {
 class ResCompany(models.Model):
     _inherit = "res.company"
 
-    # The accredited platform setting keeps answering for the directory and
-    # every other lookup, which the Odoo platform does not offer. This one
-    # only moves the transport, so a company can stay on SUPER PDP for its
-    # directory lines while its flows travel through the Odoo platform.
+    # The accredited platform setting keeps answering for the directory, which
+    # the Odoo platform does not offer. This one moves the whole transport --
+    # invoices, vendor bills, statuses, lifecycles and e-reporting -- so a
+    # company can stay on SUPER PDP for its directory lines alone.
     fr_ctc_transport_odoo = fields.Boolean(
         string="Send and receive through the Odoo accredited platform",
         help="Send the outgoing flows, receive the incoming ones and read their "
@@ -47,6 +47,34 @@ class ResCompany(models.Model):
         "by the native French e-invoicing module. The directory lookups keep "
         "using the accredited platform selected above and its credentials.",
     )
+    # Upstream fetches the readable view of a vendor bill from SUPER PDP, which
+    # never sees the flows of a company on the Odoo platform.
+    fr_ctc_auto_download_readable_invoice = fields.Boolean(
+        compute="_compute_fr_ctc_auto_download_readable_invoice",
+        store=True,
+        readonly=False,
+    )
+
+    @api.depends("fr_ctc_transport_odoo")
+    def _compute_fr_ctc_auto_download_readable_invoice(self):
+        for company in self:
+            if company.fr_ctc_transport_odoo:
+                company.fr_ctc_auto_download_readable_invoice = False
+
+    @api.depends("fr_ctc_transport_odoo")
+    def _compute_l10n_fr_f10_enable_reporting(self):
+        """Keep the native e-reporting off for a company on this bridge.
+
+        Its flux 10 comes from Akretion's e-reporting and travels through the
+        bridge. The native one switches itself on as soon as the company
+        reports to the PPF -- which an invoice sent through the bridge needs --
+        and both would then report the same period. The companies are taken
+        out before the native compute runs, which would otherwise already
+        have recomputed their invoices for flux 10.
+        """
+        bridged = self.filtered(lambda c: c.fr_ctc_transport_odoo)
+        bridged.l10n_fr_f10_enable_reporting = False
+        return super(ResCompany, self - bridged)._compute_l10n_fr_f10_enable_reporting()
 
     def _fr_ctc_is_pa_odoo(self):
         """Return True when this company routes its flows through the Odoo PA.
@@ -58,22 +86,36 @@ class ResCompany(models.Model):
         self.ensure_one()
         return self.fr_ctc_transport_odoo
 
+    def _fr_ctc_get_session(self):
+        """Hand out the proxy user when the caller is about to transport.
+
+        Two platforms are at play, and upstream hands one session to
+        everything. The transport entry points -- the crons, the send, import,
+        download and status buttons -- set `fr_ctc_transport` in the context:
+        for them, a company on the Odoo platform gets its proxy user, and no
+        SUPER PDP session is opened, so an expired token or a SUPER PDP outage
+        does not hold its flows back. Every other caller -- the directory sync,
+        the API test -- still gets SUPER PDP, which is the safe default for a
+        caller this module does not know about: it queries an API the Odoo
+        platform does not have.
+        """
+        self.ensure_one()
+        if self.env.context.get("fr_ctc_transport") and self._fr_ctc_is_pa_odoo():
+            return self._fr_ctc_get_transport_session()
+        return super()._fr_ctc_get_session()
+
     def _fr_ctc_get_transport_session(self):
         """Return what the flows travel with: the native proxy user, if any.
 
-        Upstream hands one session to everything, but here two platforms are
-        at play. `_fr_ctc_get_session` is left alone and keeps returning the
-        SUPER PDP session, because its other callers -- the directory sync,
-        the API test, the readable view -- query an API the Odoo platform
-        does not have. The transport methods of this module ask for this one
-        instead, whatever session their caller passed them.
-
-        The Odoo platform authenticates each request by signing it with the
-        proxy user's key, so there is no OAuth session to open here.
+        The transport methods of this module call it themselves, whatever
+        session their caller passed them, so a transport entry point this
+        module does not wrap still reaches the right platform. The Odoo
+        platform authenticates each request by signing it with the proxy
+        user's key, so there is no OAuth session to open here.
         """
         self.ensure_one()
         if not self._fr_ctc_is_pa_odoo():
-            return self._fr_ctc_get_session()
+            return self.with_context(fr_ctc_transport=False)._fr_ctc_get_session()
         edi_user = self.account_peppol_edi_user
         if not edi_user:
             raise UserError(
@@ -84,6 +126,17 @@ class ResCompany(models.Model):
                 )
             )
         return edi_user
+
+    def fr_ctc_run_import_log(self, origin):
+        return super(
+            ResCompany, self.with_context(fr_ctc_transport=True)
+        ).fr_ctc_run_import_log(origin)
+
+    def _fr_ctc_test_api(self):
+        # Tests the SUPER PDP connection, which the directory relies on.
+        return super(
+            ResCompany, self.with_context(fr_ctc_transport=False)
+        )._fr_ctc_test_api()
 
     def _fr_ctc_odoo_prepare_in_flow(self, message):
         """Turn one platform message into the flow values Akretion expects.
@@ -156,6 +209,11 @@ class ResCompany(models.Model):
             uuid = message.get("uuid")
             if not uuid:
                 continue
+            vals = self._fr_ctc_odoo_prepare_in_flow(message)
+            if vals["type"] == "SupplierInvoice" and not self.fr_ctc_get_in_invoice:
+                # Left on the platform, unacknowledged, as upstream leaves the
+                # vendor bills it does not ask for.
+                continue
             # A self-addressed message -- a company genuinely invoicing itself
             # -- carries a UUID the outgoing flow already holds. Skipping it as
             # a duplicate would drop the vendor bill, and it is exactly how the
@@ -165,7 +223,7 @@ class ResCompany(models.Model):
             )
             if uuid in known and not self_addressed:
                 continue
-            to_create.append(self._fr_ctc_odoo_prepare_in_flow(message))
+            to_create.append(vals)
         now_dt = fields.Datetime.now()
         flows = flow_obj.sudo().create(to_create) if to_create else flow_obj
         self.sudo().write({"fr_ctc_last_flow_import_datetime": now_dt})

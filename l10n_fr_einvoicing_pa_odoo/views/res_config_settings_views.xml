@@ -20,6 +20,9 @@
                     <field name="fr_ctc_transport_odoo" />
                 </setting>
             </setting>
+            <setting id="fr_ctc_auto_download_readable_invoice" position="attributes">
+                <attribute name="invisible">fr_ctc_transport_odoo</attribute>
+            </setting>
         </field>
     </record>
 </odoo>

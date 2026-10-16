@@ -36,6 +36,16 @@ msgid "Config Settings"
 msgstr "Paramètres de configuration"
 
 #. module: l10n_fr_einvoicing_pa_odoo
+#: model:ir.model,name:l10n_fr_einvoicing_pa_odoo.model_account_move
+msgid "Journal Entry"
+msgstr "Pièce comptable"
+
+#. module: l10n_fr_einvoicing_pa_odoo
+#: model:ir.model,name:l10n_fr_einvoicing_pa_odoo.model_res_partner
+msgid "Contact"
+msgstr "Contact"
+
+#. module: l10n_fr_einvoicing_pa_odoo
 #: model_terms:ir.ui.view,arch_db:l10n_fr_einvoicing_pa_odoo.res_config_settings_view_form
 msgid ""
 "Flows travel through the Odoo accredited platform, the directory stays on "
@@ -45,6 +55,8 @@ msgstr ""
 "plateforme agréée sélectionnée ci-dessus"
 
 #. module: l10n_fr_einvoicing_pa_odoo
+#: model:ir.model.fields,field_description:l10n_fr_einvoicing_pa_odoo.field_account_bank_statement_line__fr_ctc_transport_odoo
+#: model:ir.model.fields,field_description:l10n_fr_einvoicing_pa_odoo.field_account_move__fr_ctc_transport_odoo
 #: model:ir.model.fields,field_description:l10n_fr_einvoicing_pa_odoo.field_res_company__fr_ctc_transport_odoo
 #: model:ir.model.fields,field_description:l10n_fr_einvoicing_pa_odoo.field_res_config_settings__fr_ctc_transport_odoo
 msgid "Send and receive through the Odoo accredited platform"
@@ -64,3 +76,13 @@ msgstr ""
 "de facturation électronique française. Les consultations de l'annuaire "
 "continuent d'utiliser la plateforme agréée sélectionnée ci-dessus et ses "
 "identifiants."
+
+#. module: l10n_fr_einvoicing_pa_odoo
+#. odoo-python
+#: code:addons/l10n_fr_einvoicing_pa_odoo/models/account_move.py:0
+msgid ""
+"The Odoo accredited platform does not provide a readable version of vendor "
+"bill %s."
+msgstr ""
+"La plateforme agréée Odoo ne fournit pas de version lisible de la facture "
+"fournisseur %s."

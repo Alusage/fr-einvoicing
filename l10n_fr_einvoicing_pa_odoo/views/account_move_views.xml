@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+  Copyright 2026 Alusage (https://alusage.fr/)
+  @author: Nicolas Jeudy <nicolas@alusage.fr>
+  License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+-->
+<odoo>
+    <record id="view_move_form" model="ir.ui.view">
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="l10n_fr_einvoicing.view_move_form" />
+        <field name="arch" type="xml">
+            <button name="fr_ctc_get_readable_invoice_button" position="attributes">
+                <attribute
+                    name="invisible"
+                >not fr_einvoicing_show_readable_invoice_button or fr_ctc_transport_odoo</attribute>
+            </button>
+            <button name="fr_ctc_get_readable_invoice_button" position="after">
+                <field name="fr_ctc_transport_odoo" invisible="1" />
+            </button>
+        </field>
+    </record>
+</odoo>

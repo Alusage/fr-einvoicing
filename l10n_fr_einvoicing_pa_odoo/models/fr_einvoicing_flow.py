@@ -43,14 +43,12 @@ class FrEinvoicingFlow(models.Model):
 
     @api.model
     def _cron_companies(self):
-        """Let a company on the Odoo platform reach the crons in any case.
+        """Let a company on the Odoo platform reach the crons without OAuth.
 
         Upstream skips a company without an authentication method, which is
-        right for the AFNOR API. Such a company still needs SUPER PDP
-        credentials here -- the crons open that session before anything else,
-        and the directory relies on it -- but skipping it silently would leave
-        its flows unsent with nothing to tell why. Kept in, it fails to get its
-        session and the cron log says so.
+        right for the AFNOR API. The Odoo platform signs each request with the
+        proxy user's key instead, and the crons no longer open a SUPER PDP
+        session for such a company, so it needs none to send or receive.
         """
         return super()._cron_companies() | (
             self.env["res.company"]
@@ -62,6 +60,37 @@ class FrEinvoicingFlow(models.Model):
                 ]
             )
         )
+
+    # The transport entry points. Each one asks the company for a session
+    # before doing anything: flagged as transport, a company on the Odoo
+    # platform hands out its proxy user instead of opening a SUPER PDP session.
+
+    @api.model
+    def _in_cron(self):
+        return super(
+            FrEinvoicingFlow, self.with_context(fr_ctc_transport=True)
+        )._in_cron()
+
+    @api.model
+    def _out_cron(self):
+        return super(
+            FrEinvoicingFlow, self.with_context(fr_ctc_transport=True)
+        )._out_cron()
+
+    def send_button(self):
+        return super(
+            FrEinvoicingFlow, self.with_context(fr_ctc_transport=True)
+        ).send_button()
+
+    def download_button(self):
+        return super(
+            FrEinvoicingFlow, self.with_context(fr_ctc_transport=True)
+        ).download_button()
+
+    def update_status_button(self):
+        return super(
+            FrEinvoicingFlow, self.with_context(fr_ctc_transport=True)
+        ).update_status_button()
 
     def _fr_ctc_odoo_session(self, result):
         """Return the proxy user to talk to the Odoo platform, or log why not.

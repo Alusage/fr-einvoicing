@@ -2,7 +2,8 @@
 # @author: Nicolas Jeudy <nicolas@alusage.fr>
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import api, models
+from odoo import _, fields, models
+from odoo.exceptions import UserError
 
 
 class AccountMove(models.Model):
@@ -26,16 +27,28 @@ class AccountMove(models.Model):
             if move.company_id._fr_ctc_is_pa_odoo():
                 move.pdp_can_send_response = False
 
-    @api.depends("fr_einvoicing_flow_id")
-    def _compute_fr_einvoicing_show_readable_invoice_button(self):
-        """Hide the readable view of a vendor bill received from the Odoo PA.
+    fr_ctc_transport_odoo = fields.Boolean(related="company_id.fr_ctc_transport_odoo")
 
-        Upstream fetches it from SUPER PDP, which never saw that flow: the
-        identifier is the Odoo platform's, so asking for it there can only
-        fail. The Odoo platform has no readable view to offer instead.
+    def fr_ctc_get_readable_invoice_button(self):
+        """Refuse to fetch a readable view for a bill from the Odoo platform.
+
+        Upstream asks SUPER PDP for it, which never saw the flow: its
+        identifier is the Odoo platform's. The button is hidden for these
+        companies; this guards a call made another way.
         """
-        res = super()._compute_fr_einvoicing_show_readable_invoice_button()
         for move in self:
             if move.company_id._fr_ctc_is_pa_odoo():
-                move.fr_einvoicing_show_readable_invoice_button = False
-        return res
+                raise UserError(
+                    _(
+                        "The Odoo accredited platform does not provide a readable "
+                        "version of vendor bill %s.",
+                        move.display_name,
+                    )
+                )
+        return super().fr_ctc_get_readable_invoice_button()
+
+    def fr_ctc_send_invoice_immediately_button(self):
+        """Send through the Odoo platform without opening a SUPER PDP session."""
+        return super(
+            AccountMove, self.with_context(fr_ctc_transport=True)
+        ).fr_ctc_send_invoice_immediately_button()

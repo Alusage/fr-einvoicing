@@ -36,6 +36,7 @@ class TestPaOdoo(TransactionCase):
                 "country_id": cls.env.ref("base.fr").id,
                 "fr_ctc_transport_odoo": True,
                 "fr_ctc_event_auto_send_in_hand": False,
+                "currency_id": cls.env.ref("base.EUR").id,
             }
         )
         cls.other_company = cls.env["res.company"].create(
@@ -92,10 +93,28 @@ class TestPaOdoo(TransactionCase):
                 lambda edi_user, content: b"<Invoice/>",
             )
         )
+        # Upstream's session opening is replaced below the company method, so
+        # that the bridge's own override of it is what the tests exercise.
+        self.superpdp_sessions = []
+
+        def fake_get_session(*args, **kwargs):
+            test.superpdp_sessions.append(args)
+            return SUPERPDP_SESSION
+
+        self.startPatcher(
+            patch(
+                "odoo.addons.l10n_fr_einvoicing.models.res_company.get_session",
+                fake_get_session,
+            )
+        )
         self.startPatcher(
             patch.object(
-                company_cls, "_fr_ctc_get_session", lambda company: SUPERPDP_SESSION
+                company_cls, "_fr_ctc_credentials", lambda company: ("id", "secret")
             )
+        )
+        # The outgoing cron waits a few seconds before reading the statuses.
+        self.startPatcher(
+            patch("odoo.addons.l10n_fr_einvoicing.models.fr_einvoicing_flow.time.sleep")
         )
 
     def _result(self):
@@ -147,9 +166,33 @@ class TestPaOdoo(TransactionCase):
 
     # The directory stays on SUPER PDP
 
-    def test_session_stays_superpdp_when_transport_is_odoo(self):
+    def test_session_stays_superpdp_outside_transport(self):
         """The session the directory and the lookups use is never the proxy."""
         self.assertIs(self.company._fr_ctc_get_session(), SUPERPDP_SESSION)
+
+    def test_transport_gets_proxy_without_superpdp(self):
+        company = self.company.with_context(fr_ctc_transport=True)
+        self.assertEqual(company._fr_ctc_get_session(), self.edi_user)
+        self.assertFalse(self.superpdp_sessions)
+        other = self.other_company.with_context(fr_ctc_transport=True)
+        self.assertIs(other._fr_ctc_get_session(), SUPERPDP_SESSION)
+
+    def test_directory_sync_in_transport_uses_superpdp(self):
+        """A sync started during a transport still talks to SUPER PDP."""
+        partner = self.env["res.partner"].create(
+            {"name": "Directory partner", "is_company": True}
+        )
+        seen = []
+        partner_cls = type(self.env["res.partner"])
+        with patch.object(
+            partner_cls,
+            "_fr_directory_sync",
+            lambda partner, session, result: seen.append(session),
+        ):
+            partner.with_context(fr_ctc_transport=True)._fr_directory_sync_logs(
+                self.company, "Test"
+            )
+        self.assertEqual(seen, [SUPERPDP_SESSION])
 
     def test_directory_sync_uses_superpdp_session(self):
         partner = self.env["res.partner"].create(
@@ -241,9 +284,8 @@ class TestPaOdoo(TransactionCase):
     def test_import_acknowledges_once_landed(self):
         self._incoming_messages()
         flow_cls = type(self.env["fr.einvoicing.flow"])
-        move = self.env["account.move"].search([], limit=1)
         with patch.object(
-            flow_cls, "_import_supplier_invoice", lambda flow, result: move.id or 1
+            flow_cls, "_import_supplier_invoice", lambda flow, result: (True, {})
         ):
             flows = self.company._fr_ctc_run_import(SUPERPDP_SESSION, self._result())
         self.assertEqual(len(flows), 1)
@@ -262,7 +304,7 @@ class TestPaOdoo(TransactionCase):
         self._incoming_messages()
         flow_cls = type(self.env["fr.einvoicing.flow"])
         with patch.object(
-            flow_cls, "_import_supplier_invoice", lambda flow, result: False
+            flow_cls, "_import_supplier_invoice", lambda flow, result: (False, {})
         ):
             flows = self.company._fr_ctc_run_import(SUPERPDP_SESSION, self._result())
         self.assertEqual(flows.state, "error")
@@ -283,7 +325,9 @@ class TestPaOdoo(TransactionCase):
             }
         )
         flow_cls = type(self.env["fr.einvoicing.flow"])
-        with patch.object(flow_cls, "_import_supplier_invoice", lambda f, r: 1):
+        with patch.object(
+            flow_cls, "_import_supplier_invoice", lambda f, r: (True, {})
+        ):
             flow._process(self._result())
         self.assertEqual(flow.state, "done")
         self.assertEqual(self._endpoints(), ["ack"])
@@ -327,3 +371,70 @@ class TestPaOdoo(TransactionCase):
         )
         self.assertFalse(self.company.fr_ctc_auth_method)
         self.assertIn(self.company, self.env["fr.einvoicing.flow"]._cron_companies())
+
+    # The crons carry everything through the Odoo platform
+
+    def _only_our_company(self):
+        flow_cls = type(self.env["fr.einvoicing.flow"])
+        return patch.object(flow_cls, "_cron_companies", lambda flow: self.company)
+
+    def test_out_cron_does_not_open_superpdp_session(self):
+        flow = self._out_flow()
+        self.answers["1/send_document"] = {"ppf_messages": [{"uuid": UUID_OUT}]}
+        self.answers["1/get_document"] = {UUID_OUT: {"error": {"code": 702}}}
+        with self._only_our_company():
+            self.env["fr.einvoicing.flow"]._out_cron()
+        self.assertFalse(self.superpdp_sessions)
+        self.assertEqual(flow.state, "sent")
+        self.assertEqual(self._endpoints(), ["send_document", "get_document"])
+
+    def test_in_cron_does_not_open_superpdp_session(self):
+        self._incoming_messages()
+        flow_cls = type(self.env["fr.einvoicing.flow"])
+        with (
+            self._only_our_company(),
+            patch.object(
+                flow_cls, "_import_supplier_invoice", lambda flow, result: (True, {})
+            ),
+        ):
+            self.env["fr.einvoicing.flow"]._in_cron()
+        self.assertFalse(self.superpdp_sessions)
+        self.assertEqual(
+            self._endpoints(), ["get_all_documents", "get_document", "ack"]
+        )
+
+    def test_vendor_bills_not_fetched_when_disabled(self):
+        self.company.fr_ctc_get_in_invoice = False
+        self._incoming_messages()
+        flows = self.company._fr_ctc_run_import(SUPERPDP_SESSION, self._result())
+        self.assertFalse(flows)
+        self.assertEqual(self._endpoints(), ["get_all_documents"])
+
+    def test_lifecycle_still_fetched_when_bills_disabled(self):
+        self.company.fr_ctc_get_in_invoice = False
+        self.answers["1/get_all_documents"] = {
+            "messages": [
+                {
+                    "uuid": UUID_IN,
+                    "document_type": "CrossDomainAcknowledgementAndResponse",
+                }
+            ]
+        }
+        flows = self.company._fr_ctc_run_import(
+            SUPERPDP_SESSION, self._result(), download_and_process=False
+        )
+        self.assertEqual(flows.type, "CustomerInvoiceLC")
+        self.assertEqual(flows.syntax, "CDAR")
+
+    # Nothing else talks to SUPER PDP about the flows
+
+    def test_native_ereporting_off(self):
+        self.company.l10n_fr_pdp_send_to_ppf = True
+        self.assertFalse(self.company.l10n_fr_f10_enable_reporting)
+
+    def test_readable_view_not_fetched(self):
+        self.assertFalse(self.company.fr_ctc_auto_download_readable_invoice)
+        self.assertTrue(self.other_company.fr_ctc_auto_download_readable_invoice)
+        move = self.env["account.move"].new({"company_id": self.company.id})
+        with self.assertRaises(UserError):
+            move.fr_ctc_get_readable_invoice_button()

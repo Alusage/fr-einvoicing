@@ -4,7 +4,7 @@
 
 {
     "name": "France eInvoicing - Odoo accredited platform",
-    "version": "18.0.1.1.0",
+    "version": "18.0.1.2.0",
     "category": "Accounting",
     "license": "AGPL-3",
     "summary": "Send and receive fr-einvoicing flows through the Odoo accredited platform",
@@ -19,6 +19,7 @@
         "l10n_fr_pdp",
     ],
     "data": [
+        "views/account_move_views.xml",
         "views/res_config_settings_views.xml",
     ],
     "installable": True,
