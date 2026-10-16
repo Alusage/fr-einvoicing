@@ -29,7 +29,8 @@ class TestEreportingPaOdoo(TransactionCase):
                 "company_id": self.company.id,
                 "type": "out_transaction",
                 "transmission_type": "initial",
-                "start_date": fields.Date.today(),
+                # A transaction report starts on day 1, 11 or 21.
+                "start_date": fields.Date.today().replace(day=1),
             }
         )
         partner_cls = type(self.env["res.partner"])
