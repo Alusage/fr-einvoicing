@@ -33,7 +33,6 @@ class ResCompany(models.Model):
     fr_ctc_accredited_platform = fields.Selection(
         [
             ("superpdp", "SUPER PDP"),
-            ("odoo", "Odoo"),
         ],
         default="superpdp",
         string="Accredited Platform",
