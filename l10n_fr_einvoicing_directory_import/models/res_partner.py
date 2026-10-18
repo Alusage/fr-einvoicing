@@ -9,8 +9,8 @@ class ResPartner(models.Model):
     def _default_fr_directory_line(self):
         """Return the directory line to use as the partner's default one (BT-49).
 
-        Base rule: the partner's only line, when it has exactly one. An empty
-        recordset means "no obvious choice" and leaves the manual selector
+        Base rule: the partner's only active line, when it has exactly one. An
+        empty recordset means "no obvious choice" and leaves the manual selector
         untouched.
 
         A method of its own on purpose: which line addresses a company is a
@@ -19,9 +19,12 @@ class ResPartner(models.Model):
         to be overridden rather than patched into the CSV import.
         """
         self.ensure_one()
-        # fr_directory_line_ids leaves out disabled lines: the One2many is
-        # filtered on `active`, itself computed from the state.
-        lines = self.fr_directory_line_ids
+        # fr_directory_line_ids leaves out disabled lines only (the One2many
+        # is filtered on `active`, computed from the state): inactive and
+        # upcoming lines are still in it, and cannot receive invoices.
+        lines = self.fr_directory_line_ids.filtered(
+            lambda line: line.state == "active"
+        )
         if len(lines) == 1:
             return lines
         return self.env["fr.directory.line"].browse()

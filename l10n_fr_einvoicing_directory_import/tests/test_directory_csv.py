@@ -426,6 +426,17 @@ class TestDirectoryCsv(DirectoryCase):
             self.partner_a.fr_directory_line_ids,
         )
 
+    def test_default_directory_line_ignores_inactive_line(self):
+        """A line present in the directory but not active cannot receive
+        invoices: it is no default, even when it is the only one."""
+        self._import(
+            "SIREN;Adresse de facturation;Adresse de facturation active\n"
+            f"{SIREN_A};{SIREN_A};1\n"
+        )
+        self.partner_a.fr_directory_line_ids.state = "inactive"
+        self.partner_a.invalidate_recordset()
+        self.assertFalse(self.partner_a._default_fr_directory_line())
+
     def test_default_directory_line_with_several_lines(self):
         """Several lines: the base rule refuses to guess and leaves the choice
         to the user -- or to an override."""
@@ -437,6 +448,96 @@ class TestDirectoryCsv(DirectoryCase):
         self.partner_a.invalidate_recordset()
         self.assertEqual(len(self.partner_a.fr_directory_line_ids), 2)
         self.assertFalse(self.partner_a._default_fr_directory_line())
+
+    # ------------------------------------------------------------------
+    # The file is authoritative for the partners it contains
+    # ------------------------------------------------------------------
+    def _lines(self, partner):
+        return self.Line.with_context(active_test=False).search(
+            [("partner_id", "=", partner.id)]
+        )
+
+    def test_import_disables_lines_missing_from_file(self):
+        header = "SIREN;Adresse de facturation;Adresse de facturation active\n"
+        self._import(
+            header
+            + f"{SIREN_A};{SIREN_A};1\n"
+            + f"{SIREN_A};{SIREN_A}_{SIRET_A};1\n"
+        )
+        res = self._import(header + f"{SIREN_A};{SIREN_A}_{SIRET_A};1\n")
+        self.assertEqual(res["disabled"], 1)
+        states = {line.identifier: line.state for line in self._lines(self.partner_a)}
+        self.assertEqual(
+            states, {SIREN_A: "disabled", f"{SIREN_A}_{SIRET_A}": "active"}
+        )
+
+    def test_import_keeps_lines_of_partners_absent_from_file(self):
+        header = "SIREN;Adresse de facturation;Adresse de facturation active\n"
+        self._import(header + f"{SIREN_A};{SIREN_A};1\n{SIREN_B};{SIREN_B};1\n")
+        res = self._import(header + f"{SIREN_A};{SIREN_A};1\n")
+        self.assertEqual(res["disabled"], 0)
+        self.assertEqual(self._lines(self.partner_b).state, "active")
+
+    def test_import_disable_pass_is_idempotent(self):
+        header = "SIREN;Adresse de facturation;Adresse de facturation active\n"
+        self._import(
+            header
+            + f"{SIREN_A};{SIREN_A};1\n"
+            + f"{SIREN_A};{SIREN_A}_{SIRET_A};1\n"
+        )
+        csv_text = header + f"{SIREN_A};{SIREN_A}_{SIRET_A};1\n"
+        self._import(csv_text)
+        res = self._import(csv_text)
+        self.assertEqual(res["disabled"], 0)
+        self.assertEqual(res["default_reset"], 0)
+
+    def test_import_resets_default_line_disabled_by_file(self):
+        header = "SIREN;Adresse de facturation;Adresse de facturation active\n"
+        self._import(header + f"{SIREN_A};{SIREN_A};1\n")
+        self.partner_a.invalidate_recordset()
+        old_default = self.partner_a.default_fr_directory_line_id
+        self.assertEqual(old_default.identifier, SIREN_A)
+        res = self._import(header + f"{SIREN_A};{SIREN_A}_{SIRET_A};1\n")
+        self.assertEqual(res["default_reset"], 1)
+        self.partner_a.invalidate_recordset()
+        self.assertEqual(
+            self.partner_a.default_fr_directory_line_id.identifier,
+            f"{SIREN_A}_{SIRET_A}",
+        )
+
+    def test_import_empties_stale_default_line_without_candidate(self):
+        """No obvious replacement: the stale line is emptied rather than kept,
+        so the invoice cannot be sent to an address that is no longer active."""
+        header = "SIREN;Adresse de facturation;Adresse de facturation active\n"
+        self._import(header + f"{SIREN_A};{SIREN_A};1\n")
+        res = self._import(
+            header
+            + f"{SIREN_A};{SIREN_A};0\n"
+            + f"{SIREN_A};{SIREN_A}_{SIRET_A};1\n"
+            + f"{SIREN_A};{SIREN_A}_{SIRET_A}_SERVICE1;1\n"
+        )
+        self.assertEqual(res["default_reset"], 1)
+        self.partner_a.invalidate_recordset()
+        self.assertFalse(self.partner_a.default_fr_directory_line_id)
+
+    def test_import_keeps_active_manual_default_line(self):
+        header = "SIREN;Adresse de facturation;Adresse de facturation active\n"
+        self._import(
+            header
+            + f"{SIREN_A};{SIREN_A};1\n"
+            + f"{SIREN_A};{SIREN_A}_{SIRET_A};1\n"
+        )
+        manual = self._lines(self.partner_a).filtered(
+            lambda line: line.identifier == SIREN_A
+        )
+        self.partner_a.default_fr_directory_line_id = manual
+        res = self._import(
+            header
+            + f"{SIREN_A};{SIREN_A};1\n"
+            + f"{SIREN_A};{SIREN_A}_{SIRET_A};1\n"
+        )
+        self.assertEqual(res["default_reset"], 0)
+        self.assertEqual(self.partner_a.default_fr_directory_line_id, manual)
 
 
 class TestDirectoryCsvWizard(DirectoryCase):
