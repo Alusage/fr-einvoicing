@@ -24,6 +24,10 @@ STATE_ALIASES = {
     "inactive": "inactive",
 }
 VALID_TYPES = ("siren", "siret", "routing_code", "suffix", "error")
+# Default service code of the public entities registered on Chorus Pro. The
+# directory return carries no entity type: this code is the only sign, in the
+# file, that the company is a public entity.
+PUBLIC_ROUTING_CODES = ("FACTURES_PUBLIQUES",)
 BOOL_TRUE = {"1", "true", "vrai", "oui", "yes", "x", "o"}
 
 # Partners processed per transaction during the import. Each batch is
@@ -307,10 +311,26 @@ class FrDirectoryLine(models.Model):
         partner (status, default line selector) stays hidden and BT-49 cannot
         resolve. Entity type defaults to ``private`` when not already set.
 
+        A partner with an active line on a public routing code is a public
+        entity: it is set as such even when an earlier import made it private,
+        otherwise its invoices miss everything Chorus Pro requires (SIRET,
+        service code, B2G processing).
+
         Return the number of partners whose default line was set again because
         it was empty or no longer active.
         """
         today = fields.Date.context_today(self)
+        public_ids = set(
+            self.sudo()
+            .search(
+                [
+                    ("partner_id", "in", partners.commercial_partner_id.ids),
+                    ("routing_code", "in", PUBLIC_ROUTING_CODES),
+                    ("state", "!=", "disabled"),
+                ]
+            )
+            .partner_id.ids
+        )
         # One write per partner would mean thousands of UPDATE plus as many
         # recomputes of the stored directory fields. Partners sharing the exact
         # same values are written together, and tracking is disabled so the
@@ -320,7 +340,10 @@ class FrDirectoryLine(models.Model):
         reset = 0
         for partner in Partner.commercial_partner_id:
             vals = {"fr_directory_last_sync_date": today}
-            if not partner.fr_directory_entity_type:
+            if partner.id in public_ids:
+                if partner.fr_directory_entity_type != "public":
+                    vals["fr_directory_entity_type"] = "public"
+            elif not partner.fr_directory_entity_type:
                 vals["fr_directory_entity_type"] = "private"
             siren = partner._get_siren(raise_if_none=False)
             if siren:

@@ -321,6 +321,54 @@ class TestDirectoryCsv(DirectoryCase):
         self.assertTrue(self.partner_a.fr_directory_last_sync_date)
         self.assertEqual(self.partner_a.fr_directory_siren, SIREN_A)
 
+    def test_import_marks_public_entity(self):
+        """The directory return has no entity type: the Chorus Pro default
+        service code is what tells a public entity apart."""
+        self._import(
+            "SIREN;Adresse de facturation;Adresse de facturation active\n"
+            f"{SIREN_A};{SIREN_A}_{SIRET_A};1\n"
+            f"{SIREN_A};{SIREN_A}_{SIRET_A}_FACTURES_PUBLIQUES;1\n"
+            f"{SIREN_B};{SIREN_B};1\n"
+        )
+        (self.partner_a | self.partner_b).invalidate_recordset()
+        self.assertEqual(self.partner_a.fr_directory_entity_type, "public")
+        self.assertEqual(self.partner_a.fr_directory_siret, SIRET_A)
+        self.assertEqual(self.partner_b.fr_directory_entity_type, "private")
+
+    def test_import_fixes_public_entity_made_private(self):
+        """Earlier imports defaulted every partner to private."""
+        self.partner_a.write({
+            "fr_directory_entity_type": "private",
+            "fr_directory_last_sync_date": "2026-01-01",
+        })
+        self._import(
+            "SIREN;Adresse de facturation;Adresse de facturation active\n"
+            f"{SIREN_A};{SIREN_A}_{SIRET_A}_FACTURES_PUBLIQUES;1\n"
+        )
+        self.partner_a.invalidate_recordset()
+        self.assertEqual(self.partner_a.fr_directory_entity_type, "public")
+
+    def test_import_ignores_disabled_public_routing_code(self):
+        self._import(
+            "SIREN;Adresse de facturation;Adresse de facturation active\n"
+            f"{SIREN_A};{SIREN_A}_{SIRET_A};1\n"
+            f"{SIREN_A};{SIREN_A}_{SIRET_A}_FACTURES_PUBLIQUES;0\n"
+        )
+        self.partner_a.invalidate_recordset()
+        self.assertEqual(self.partner_a.fr_directory_entity_type, "private")
+
+    def test_import_never_turns_public_entity_private(self):
+        self.partner_a.write({
+            "fr_directory_entity_type": "public",
+            "fr_directory_last_sync_date": "2026-01-01",
+        })
+        self._import(
+            "SIREN;Adresse de facturation;Adresse de facturation active\n"
+            f"{SIREN_A};{SIREN_A}_{SIRET_A};1\n"
+        )
+        self.partner_a.invalidate_recordset()
+        self.assertEqual(self.partner_a.fr_directory_entity_type, "public")
+
     def test_import_sets_single_active_line_as_default(self):
         self._import(
             "SIREN;Adresse de facturation;Adresse de facturation active\n"
