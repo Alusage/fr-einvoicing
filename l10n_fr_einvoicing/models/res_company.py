@@ -130,6 +130,12 @@ class ResCompany(models.Model):
     fr_ctc_auto_download_readable_invoice = fields.Boolean(
         default=True, string="Auto Download Readable Invoice from AP"
     )
+    fr_ctc_directory_only = fields.Boolean(
+        string="Use AP for the Directory Only",
+        help="Invoices are exchanged through another accredited platform: "
+        "this one is only queried for the directory. Nothing is sent to it "
+        "and no flow is fetched from it.",
+    )
 
     @api.depends("fr_ctc_auth_method")
     def _compute_fr_ctc_credentials(self):
@@ -274,8 +280,21 @@ class ResCompany(models.Model):
                     f"token ID {token_rec.id} created"
                 )
 
-    def _fr_ctc_get_session(self):
+    def _fr_ctc_get_session(self, directory=False):
+        """Return a session on the accredited platform.
+
+        Pass directory=True for directory queries: they are the only calls
+        allowed when the company uses the platform for the directory only.
+        """
         self.ensure_one()
+        if self.fr_ctc_directory_only and not directory:
+            raise UserError(
+                _(
+                    "Company '%s' uses its accredited platform for the "
+                    "directory only: invoices are not exchanged with it."
+                )
+                % self.display_name
+            )
         client_id, client_secret = self._fr_ctc_credentials()
         company_ident4log = f"{self.display_name} ID {self.id}"
         return get_session(
@@ -511,7 +530,7 @@ class ResCompany(models.Model):
         )[platform]
         test_siren = "110043015"  # Ministère de l'Education Nationale
         try:
-            session = self._fr_ctc_get_session()
+            session = self._fr_ctc_get_session(directory=True)
             # I don't use healthcheck(), because it works even if session is ko
             # so we now use a directory query
             res = get_directory_siren(session, "110043015")

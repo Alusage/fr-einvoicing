@@ -1211,6 +1211,7 @@ class FrEinvoicingFlow(models.Model):
                 [
                     ("fr_ctc_accredited_platform", "!=", False),
                     ("fr_ctc_auth_method", "!=", False),
+                    ("fr_ctc_directory_only", "=", False),
                     # line below will probably be removed one day, if we see that
                     # companies also send to non-assujetis entities using the
                     # PEPPOL directory (instead of the PPF directory)

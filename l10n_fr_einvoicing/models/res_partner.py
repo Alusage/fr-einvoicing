@@ -239,7 +239,7 @@ class ResPartner(models.Model):
             "new_count": 0,
             "updated_count": 0,
         }
-        session = company._fr_ctc_get_session()
+        session = company._fr_ctc_get_session(directory=True)
         action = self._fr_directory_sync(session, result)
         self._fr_directory_chatter_log(origin, result)
         log_obj._create_log(result)
@@ -275,7 +275,7 @@ class ResPartner(models.Model):
         today = fields.Date.context_today(self)
         company = self.company_id or self.env.company
         try:
-            session = company._fr_ctc_get_session()
+            session = company._fr_ctc_get_session(directory=True)
         except Exception as e:
             log_obj._error_log(result, str(e))
             log_obj._create_log(result)

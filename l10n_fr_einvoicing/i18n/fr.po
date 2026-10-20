@@ -3060,3 +3060,39 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:l10n_fr_einvoicing.view_partner_form
 msgid "Reset directory"
 msgstr "Réinitialisation annuaire"
+
+#. module: l10n_fr_einvoicing
+#: model:ir.model.fields,field_description:l10n_fr_einvoicing.field_res_company__fr_ctc_directory_only
+#: model:ir.model.fields,field_description:l10n_fr_einvoicing.field_res_config_settings__fr_ctc_directory_only
+msgid "Use AP for the Directory Only"
+msgstr "Utiliser la PA pour l'annuaire uniquement"
+
+#. module: l10n_fr_einvoicing
+#: model:ir.model.fields,help:l10n_fr_einvoicing.field_res_company__fr_ctc_directory_only
+#: model:ir.model.fields,help:l10n_fr_einvoicing.field_res_config_settings__fr_ctc_directory_only
+msgid ""
+"Invoices are exchanged through another accredited platform: this one is "
+"only queried for the directory. Nothing is sent to it and no flow is fetched"
+" from it."
+msgstr ""
+"Les factures sont échangées via une autre plateforme agréée : celle-ci "
+"n'est interrogée que pour l'annuaire. Rien ne lui est envoyé et aucun flux "
+"n'en est récupéré."
+
+#. module: l10n_fr_einvoicing
+#: model_terms:ir.ui.view,arch_db:l10n_fr_einvoicing.res_config_settings_view_form
+msgid ""
+"Invoices go through another platform: only the directory is queried here"
+msgstr ""
+"Les factures passent par une autre plateforme : seul l'annuaire est "
+"interrogé ici"
+
+#. module: l10n_fr_einvoicing
+#. odoo-python
+#: code:addons/l10n_fr_einvoicing/models/res_company.py:0
+msgid ""
+"Company '%s' uses its accredited platform for the directory only: invoices "
+"are not exchanged with it."
+msgstr ""
+"La société '%s' utilise sa plateforme agréée pour l'annuaire uniquement : "
+"les factures ne sont pas échangées avec elle."

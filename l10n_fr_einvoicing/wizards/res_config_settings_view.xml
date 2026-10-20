@@ -59,6 +59,12 @@
                         </div>
                     </setting>
                     <setting
+                        id="fr_ctc_directory_only"
+                        help="Invoices go through another platform: only the directory is queried here"
+                    >
+                        <field name="fr_ctc_directory_only" />
+                    </setting>
+                    <setting
                         id="fr_ctc_client_id"
                         invisible="fr_ctc_auth_method != 'client_credentials'"
                     >
