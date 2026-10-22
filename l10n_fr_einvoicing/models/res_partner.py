@@ -720,7 +720,7 @@ class ResPartner(models.Model):
             vat = "".join(x for x in ini_vat if not x.isspace()).upper() or False
             if not vat:
                 vals["vat"] = False
-            elif vat_is_valid(vat):
+            elif vat == "/" or vat_is_valid(vat):
                 if ini_vat != vat:
                     vals["vat"] = vat
                     logger.info(
