@@ -1245,7 +1245,7 @@ msgid ""
 "Failed to get the readable version of vendor bill/refund %(invoice)s. Error:"
 " %(err)s"
 msgstr ""
-"Échec lors de la récupération de la version lisible de la facture/avoir "
+"Échec lors de la récupération du lisible de la facture/avoir "
 "fournisseur %(invoice)s. Erreur : %(err)s"
 
 #. module: l10n_fr_einvoicing
@@ -1417,7 +1417,7 @@ msgstr "Annuaire Fr Afficher un avertissement SIREN manquant"
 #: model:ir.model.fields,field_description:l10n_fr_einvoicing.field_account_bank_statement_line__fr_einvoicing_show_readable_invoice_button
 #: model:ir.model.fields,field_description:l10n_fr_einvoicing.field_account_move__fr_einvoicing_show_readable_invoice_button
 msgid "Fr Einvoicing Show Readable Invoice Button"
-msgstr "Facturation électronique FR : afficher le bouton de facture lisible"
+msgstr "Facturation électronique FR : afficher le bouton du lisible de la facture"
 
 #. module: l10n_fr_einvoicing
 #: model:ir.ui.menu,name:l10n_fr_einvoicing.fr_einvoicing_root
@@ -1698,6 +1698,11 @@ msgstr "Dernière mise à jour le"
 #: model:ir.model.fields,help:l10n_fr_einvoicing.field_fr_einvoicing_flow__updated_at
 msgid "Last update of the flow"
 msgstr "Dernière mise à jour du flux"
+
+#. module: l10n_fr_einvoicing
+#: model_terms:ir.ui.view,arch_db:l10n_fr_einvoicing.view_account_invoice_filter
+msgid "Last event status"
+msgstr "État du dernier évènement"
 
 #. module: l10n_fr_einvoicing
 #: model:ir.model.fields.selection,name:l10n_fr_einvoicing.selection__fr_einvoicing_flow__type__customerinvoicelc
@@ -3039,3 +3044,19 @@ msgstr "vide"
 #: model_terms:ir.ui.view,arch_db:l10n_fr_einvoicing.view_partner_form
 msgid "the parent company"
 msgstr "la société parente"
+
+#. module: l10n_fr_einvoicing
+#: model_terms:ir.ui.view,arch_db:l10n_fr_einvoicing.view_partner_form
+msgid ""
+"This button delete directory lines and reset the siret used for directory "
+"sync, do you want to continue? Please verify that no directory lines has been "
+"used on a document."
+msgstr ""
+"Ce bouton supprime les lignes d'annuaire de ce partenaire et réinitialise le "
+"siren utilisé pour la synchronisation de l'annuaire, êtes vous sr de vouloir "
+"continuer ? Veuillez vérifier qu'aucune lignes n'a été utilisée sur un document."
+
+#. module: l10n_fr_einvoicing
+#: model_terms:ir.ui.view,arch_db:l10n_fr_einvoicing.view_partner_form
+msgid "Reset directory"
+msgstr "Réinitialisation annuaire"
