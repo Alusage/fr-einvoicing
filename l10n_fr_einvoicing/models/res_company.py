@@ -289,11 +289,11 @@ class ResCompany(models.Model):
         self.ensure_one()
         if self.fr_ctc_directory_only and not directory:
             raise UserError(
-                _(
+                self.env._(
                     "Company '%s' uses its accredited platform for the "
-                    "directory only: invoices are not exchanged with it."
+                    "directory only: invoices are not exchanged with it.",
+                    self.display_name,
                 )
-                % self.display_name
             )
         client_id, client_secret = self._fr_ctc_credentials()
         company_ident4log = f"{self.display_name} ID {self.id}"
