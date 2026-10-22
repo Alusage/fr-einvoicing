@@ -245,7 +245,7 @@ class AccountMove(models.Model):
 
     def unlink(self):
         for move in self:
-            if move.fr_einvoicing_flow_id and not self._context.get(
+            if move.fr_einvoicing_flow_id and not self.env.context.get(
                 "fr_einvoicing_force_unlink"
             ):
                 msg = self.env._(

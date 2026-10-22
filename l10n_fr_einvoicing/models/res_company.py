@@ -706,7 +706,9 @@ class ResCompany(models.Model):
         companies = self.env["res.company"].search(
             [
                 ("partner_id.country_id", "=", self.env.ref("base.fr").id),
-                ("siren", "in", ("000000001", "000000002")),
+                "|",
+                ("partner_id.company_registry", "=like", "000000001%"),
+                ("partner_id.company_registry", "=like", "000000002%"),
             ]
         )
         if len(companies) != 2:

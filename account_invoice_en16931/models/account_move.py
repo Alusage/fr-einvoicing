@@ -255,7 +255,7 @@ class AccountMove(models.Model):
             if (
                 move.is_sale_document()
                 and not config["test_enable"]
-                and not self._context.get("skip_en16931_checks_upon_post")
+                and not self.env.context.get("skip_en16931_checks_upon_post")
             ):
                 move.company_id._en16931_checks()
                 errors = []

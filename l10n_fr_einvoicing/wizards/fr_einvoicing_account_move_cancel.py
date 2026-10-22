@@ -15,16 +15,16 @@ class FrEinvoicingAccountMoveCancel(models.TransientModel):
             "l10n_fr_einvoicing.fr_einvoicing_event_manual_action"
         )
         action["context"] = {
-            "active_model": self._context.get("active_model"),
-            "active_id": self._context.get("active_id"),
-            "active_ids": self._context.get("active_ids"),
+            "active_model": self.env.context.get("active_model"),
+            "active_id": self.env.context.get("active_id"),
+            "active_ids": self.env.context.get("active_ids"),
             "default_status_purchase": "refused",
             "default_status_readonly": True,
         }
         return action
 
     def cancel_without_event(self):
-        assert self._context.get("active_model") == "account.move"
-        move = self.env["account.move"].browse(self._context.get("active_id"))
+        assert self.env.context.get("active_model") == "account.move"
+        move = self.env["account.move"].browse(self.env.context.get("active_id"))
         assert move.is_invoice()
         move.with_context(by_pass_refusal_event_wizard=True).button_cancel()
